@@ -3,19 +3,25 @@ import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { copyText } from "@/lib/copy";
 import { buildVenueLinks } from "@/lib/venue-links";
+import { parseMedia, parseMediaList, type InvitationMedia } from "@/lib/invitation-media";
 import { toast } from "sonner";
 import { ChevronDown, ChevronUp, Copy, MapPin, MessageCircle, Music2, Pause, Play, Share2, Volume2, X } from "lucide-react";
 
 const HERO_IMAGE = "/manus-storage/chaewon-hotel-hero_a8c12ed8.jpg";
 const BGM = "/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3";
 const VENUE_COORDS = { lat: 37.5636, lng: 126.9791 };
-const fallback = { id: 0, babyName: "채원", fatherName: "강호성", motherName: "Nguyen HongNgoc", invitationTitle: "채원의 첫 번째 생일에 소중한 분들을 초대합니다.", greeting: "저희에게 찾아온 가장 빛나는 선물, 채원이가 어느덧 첫 번째 생일을 맞았습니다. 그동안 보내주신 따뜻한 사랑에 감사드리며, 소중한 분들과 함께 채원이의 첫걸음을 축복하는 자리를 마련했습니다.", eventDate: "2026. 10. 18 SUN", eventTime: "12:00 PM", venueName: "코트야드 메리어트 서울 명동", venueAddress: "서울특별시 중구 남대문로 9", parkingInfo: "호텔 지하 주차장을 이용하실 수 있습니다. 행사 당일 주차 등록 및 세부 안내는 호텔 데스크에서 확인해 주세요.", accountInfo: "강호성 | 카카오뱅크 3333-19-8058955" };
+const fallback = { id: 0, babyName: "채원", fatherName: "강호성", motherName: "Nguyen HongNgoc", invitationTitle: "채원의 첫 번째 생일에 소중한 분들을 초대합니다.", greeting: "저희에게 찾아온 가장 빛나는 선물, 채원이가 어느덧 첫 번째 생일을 맞았습니다. 그동안 보내주신 따뜻한 사랑에 감사드리며, 소중한 분들과 함께 채원이의 첫걸음을 축복하는 자리를 마련했습니다.", eventDate: "2026. 10. 18 SUN", eventTime: "12:00 PM", venueName: "코트야드 메리어트 서울 명동", venueAddress: "서울특별시 중구 남대문로 9", parkingInfo: "호텔 지하 주차장을 이용하실 수 있습니다. 행사 당일 주차 등록 및 세부 안내는 호텔 데스크에서 확인해 주세요.", heroImageUrl: null, galleryImageUrls: null, accountInfo: "강호성 | 카카오뱅크 3333-19-8058955" };
 
 function Section({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
   return <section className={`hotel-section ${className}`}><p className="section-label">{label}</p>{children}</section>;
 }
 
 function VenueMap() { return <div className="venue-map"><iframe title="코트야드 메리어트 서울 명동 위치 지도" src="https://maps.google.com/maps?q=Courtyard%20by%20Marriott%20Seoul%20Myeongdong&t=&z=16&ie=UTF8&iwloc=&output=embed" loading="lazy" /></div>; }
+
+function InvitationMediaView({ media, fallback, alt, className = "" }: { media: InvitationMedia | null; fallback: string; alt: string; className?: string }) {
+  if (media?.kind === "video") return <video className={className} src={media.url} autoPlay muted loop playsInline preload="metadata" aria-label={alt} />;
+  return <img className={className} src={media?.url || fallback} alt={alt} />;
+}
 
 export default function Home() {
   const [, params] = useRoute("/invite/:slug");
@@ -34,6 +40,8 @@ export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [rsvp, setRsvp] = useState({ name: "", attendance: "attending" as "attending" | "unable", adults: 1, children: 0, meal: true, contact: "", note: "" });
   const accounts = useMemo(() => invite.accountInfo.split("\n").map(line => { const [label, ...rest] = line.split("|"); return { label: label?.trim() || "계좌", value: rest.join("|").trim() || line }; }), [invite.accountInfo]);
+  const heroMedia = parseMedia(invite.heroImageUrl);
+  const galleryMedia = parseMediaList(invite.galleryImageUrls);
   const venueLinks = buildVenueLinks(invite.venueName, invite.venueAddress);
   const copy = async (value: string, label: string) => { if (await copyText(value)) toast.success(`${label} 복사 완료`); else toast.error("복사할 수 없어요. 길게 눌러 복사해 주세요."); };
   const share = async () => { const kakao = (window as any).Kakao; if (kakao?.Share?.sendDefault) { kakao.Share.sendDefault({ objectType: "feed", content: { title: `${invite.babyName}의 첫 번째 생일`, description: invite.invitationTitle, imageUrl: `${location.origin}${HERO_IMAGE}`, link: { mobileWebUrl: location.href, webUrl: location.href } } }); return; } if (navigator.share) await navigator.share({ title: `${invite.babyName}의 첫 번째 생일`, text: invite.invitationTitle, url: location.href }); else await copy(location.href, "초대장 링크"); };
@@ -44,7 +52,7 @@ export default function Home() {
   return <main className="hotel-invitation">
     <audio ref={audioRef} src={BGM} preload="none" onEnded={() => setMusicPlaying(false)} />
     <section className="hotel-hero">
-      <img src={HERO_IMAGE} alt="채원의 첫 번째 생일을 위한 호텔 스타일 케이크 테이블" />
+      <InvitationMediaView media={heroMedia} fallback={HERO_IMAGE} alt="채원의 첫 번째 생일을 위한 호텔 스타일 케이크 테이블" />
       <div className="hero-veil" />
       <div className="hero-ribbon">⌇</div>
       <div className="hero-content"><p>OUR BABY&apos;S FIRST BIRTHDAY</p><h1>강채원</h1><span className="hero-rule" /><strong>{invite.eventDate} · {invite.eventTime}</strong><small>{invite.venueName}</small></div>
@@ -53,7 +61,7 @@ export default function Home() {
 
     <Section label="INVITATION" className="invitation-letter"><div className="monogram">CW</div><h2>사랑을 담아<br /><em>초대합니다</em></h2><p>{invite.greeting}</p><div className="parents">아빠 <b>{invite.fatherName}</b><i /> 엄마 <b>{invite.motherName}</b></div></Section>
 
-    <Section label="A YEAR OF JOY" className="editorial-gallery"><h2>한 해 동안 피어난<br /><em>우리의 기쁨</em></h2><div className="gallery-editorial"><img src={HERO_IMAGE} alt="첫돌을 위한 케이크 테이블" /><div><p>채원이와 함께한<br />가장 따스한 계절</p><img src={HERO_IMAGE} alt="채원이의 첫 번째 생일 장식" /></div></div></Section>
+    <Section label="A YEAR OF JOY" className="editorial-gallery"><h2>한 해 동안 피어난<br /><em>우리의 기쁨</em></h2><div className="gallery-editorial"><InvitationMediaView media={galleryMedia[0] ?? null} fallback={HERO_IMAGE} alt="채원이의 갤러리 사진" /><div><p>채원이와 함께한<br />가장 따스한 계절</p><InvitationMediaView media={galleryMedia[1] ?? null} fallback={HERO_IMAGE} alt="채원이의 갤러리 사진" /></div></div>{galleryMedia.slice(2).length > 0 && <div className="extra-gallery">{galleryMedia.slice(2).map((media, index) => <InvitationMediaView key={`${media.url}-${index}`} media={media} fallback={HERO_IMAGE} alt="채원이의 갤러리 사진" />)}</div>}</Section>
 
     <section className="love-transition"><img src={HERO_IMAGE} alt="채원이의 첫돌을 위한 축하 테이블" /><div><p>A year of love,</p><strong>a lifetime of joy.</strong></div></section>
 

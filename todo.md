@@ -39,3 +39,10 @@
 - [x] Re-run tests and verify mobile and desktop renderings of the final design
 - [x] Persist parent names as invitation content and expose them in public and admin views
 - [x] Save and deliver the final luxury-hotel invitation checkpoint
+
+- [x] Add administrator-only image, GIF, and video upload with MIME type and size validation
+- [x] Store uploaded hero and gallery media metadata in invitation content
+- [x] Build admin controls for choosing and arranging hero and gallery media
+- [x] Render uploaded images, GIFs, and muted looping videos in the public hotel invitation
+- [x] Add upload authorization and media-input validation tests
+- [x] Verify the media-management flow with an actual storage upload and public render, then save a new checkpoint

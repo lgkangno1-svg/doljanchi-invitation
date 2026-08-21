@@ -4,11 +4,14 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
+import { storagePut } from "./storage";
+import { safeMediaFileName, validateMediaUpload } from "./media";
 
 const invitationInput = z.object({
   babyName: z.string().trim().min(1).max(80), fatherName: z.string().trim().min(1).max(120), motherName: z.string().trim().min(1).max(120), invitationTitle: z.string().trim().min(1).max(180), greeting: z.string().trim().min(1).max(2000),
   eventDate: z.string().trim().min(1).max(32), eventTime: z.string().trim().min(1).max(64), venueName: z.string().trim().min(1).max(160), venueAddress: z.string().trim().min(1).max(255), parkingInfo: z.string().trim().min(1).max(1000), accountInfo: z.string().trim().min(1).max(1000),
 });
+const mediaItemInput = z.object({ url: z.string().startsWith("/manus-storage/"), kind: z.enum(["image", "video"]), mimeType: z.string().max(80), fileName: z.string().max(140) });
 
 export const appRouter = router({
   system: systemRouter,
@@ -25,6 +28,13 @@ export const appRouter = router({
   admin: router({
     dashboard: adminProcedure.query(async () => { const invite = await db.getOrCreateInvitation(); const [guestbook, rsvps] = await Promise.all([db.listAllGuestbook(invite.id), db.listRsvp(invite.id)]); return { invitation: invite, guestbook, rsvps }; }),
     updateInvitation: adminProcedure.input(invitationInput).mutation(({ input }) => db.updateInvitation(input)),
+    uploadMedia: adminProcedure.input(z.object({ fileName: z.string().min(1).max(140), mimeType: z.string().min(1).max(80), dataBase64: z.string().min(1).max(42_000_000) })).mutation(async ({ input, ctx }) => {
+      const { data, kind } = validateMediaUpload(input.fileName, input.mimeType, input.dataBase64);
+      const safeName = safeMediaFileName(input.fileName);
+      const stored = await storagePut(`invitations/${ctx.user.id}/${Date.now()}-${safeName}`, data, input.mimeType);
+      return { url: stored.url, kind, mimeType: input.mimeType, fileName: input.fileName };
+    }),
+    saveMedia: adminProcedure.input(z.object({ hero: mediaItemInput.nullable(), gallery: z.array(mediaItemInput).max(8) })).mutation(({ input }) => db.updateInvitationMedia(input.hero ? JSON.stringify(input.hero) : null, JSON.stringify(input.gallery))),
     hideGuestbook: adminProcedure.input(z.object({ id: z.number().int(), hidden: z.boolean() })).mutation(({ input }) => db.updateGuestbookVisibility(input.id, input.hidden)),
     deleteGuestbook: adminProcedure.input(z.object({ id: z.number().int() })).mutation(({ input }) => db.deleteGuestbook(input.id)),
   }),

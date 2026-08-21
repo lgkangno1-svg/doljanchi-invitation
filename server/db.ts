@@ -43,6 +43,8 @@ const defaultInvitation = {
   venueName: "코트야드 메리어트 서울 명동",
   venueAddress: "서울특별시 중구 남대문로 9",
   parkingInfo: "호텔 지하 주차장을 이용하실 수 있습니다. 행사 당일 주차 등록 및 세부 안내는 호텔 데스크에서 확인해 주세요.",
+  heroImageUrl: null,
+  galleryImageUrls: null,
   accountInfo: "강호성 | 카카오뱅크 3333-19-8058955",
   isPublished: 1,
 };
@@ -60,6 +62,13 @@ export async function updateInvitation(data: Partial<typeof defaultInvitation>) 
   const db = await getDb(); if (!db) return getOrCreateInvitation();
   const current = await getOrCreateInvitation();
   await db.update(invitations).set(data).where(eq(invitations.id, current.id));
+  return getOrCreateInvitation();
+}
+
+export async function updateInvitationMedia(heroImageUrl: string | null, galleryImageUrls: string) {
+  const db = await getDb(); if (!db) return getOrCreateInvitation();
+  const current = await getOrCreateInvitation();
+  await db.update(invitations).set({ heroImageUrl, galleryImageUrls }).where(eq(invitations.id, current.id));
   return getOrCreateInvitation();
 }
 

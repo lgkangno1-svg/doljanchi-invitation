@@ -43,6 +43,10 @@ describe("invitation interactions", () => {
     const caller = appRouter.createCaller(context("admin"));
     await expect(caller.admin.updateInvitation({ babyName: "채원", invitationTitle: "초대", greeting: "인사", eventDate: "2026. 10. 18 SUN", eventTime: "12:00 PM", venueName: "코트야드 메리어트 서울 명동", venueAddress: "서울특별시 중구 남대문로 9", parkingInfo: "주차 안내", accountInfo: "강호성 | 카카오뱅크 3333-19-8058955" } as any)).rejects.toThrow();
   });
+  it("blocks non-admin media uploads before any file can be stored", async () => {
+    const caller = appRouter.createCaller(context("user"));
+    await expect(caller.admin.uploadMedia({ fileName: "chaewon.gif", mimeType: "image/gif", dataBase64: "R0lGOA==" })).rejects.toThrow();
+  });
   it("blocks non-admin dashboard access", async () => {
     const caller = appRouter.createCaller(context("user"));
     await expect(caller.admin.dashboard()).rejects.toThrow();
