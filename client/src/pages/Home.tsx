@@ -1,33 +1,42 @@
-import { useAuth } from "@/_core/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { Streamdown } from 'streamdown';
+import { useMemo, useState } from "react";
+import { useRoute } from "wouter";
+import { trpc } from "@/lib/trpc";
+import { copyText } from "@/lib/copy";
+import { toast } from "sonner";
+import { ChevronDown, ChevronUp, Copy, Heart, MapPin, MessageCircle, Navigation, Share2, Sparkles } from "lucide-react";
 
-/**
- * All content in this page are only for example, replace with your own feature implementation
- * When building pages, remember your instructions in Frontend Workflow, Frontend Best Practices, Design Guide and Common Pitfalls
- */
+const fallback = { id: 0, babyName: "서아", invitationTitle: "서아의 첫 번째 생일에 소중한 분들을 초대합니다.", greeting: "작고 사랑스러운 손으로 세상을 배워가는 서아가 어느새 첫 번째 생일을 맞았습니다. 따뜻한 마음으로 함께 축하해 주세요.", eventDate: "2026. 10. 17 SAT", eventTime: "12:00 PM", venueName: "그랜드 홀", venueAddress: "서울특별시 ○○구 ○○로 123, 3층", parkingInfo: "건물 지하주차장 이용 · 참석객 3시간 무료 · 출차 전 데스크에서 차량번호를 등록해 주세요.", accountInfo: "아빠 | 국민은행 123-456-789\n엄마 | 신한은행 123-456-789" };
+
+function Section({ eyebrow, children, className = "" }: { eyebrow: string; children: React.ReactNode; className?: string }) { return <section className={`invite-section ${className}`}><p className="eyebrow">{eyebrow}</p>{children}</section>; }
+
 export default function Home() {
-  // The useAuth hook provides authentication state.
-  // To implement login/logout, call logout(), or start login from an event
-  // handler: onClick={() => startLogin()} (imported from "@/const"). Never call
-  // startLogin() during render (no href={startLogin()}) — it mints a one-time
-  // nonce cookie and must run only at the moment of navigation.
-  let { user, loading, error, isAuthenticated, logout } = useAuth();
+  const [, params] = useRoute("/invite/:slug");
+  const slug = params?.slug ?? "invite-peach-ribbon-x7k2p";
+  const inviteQuery = trpc.invitation.get.useQuery({ slug }, { staleTime: 30000 });
+  const invite = inviteQuery.data ?? fallback;
+  const guestbook = trpc.invitation.guestbook.useQuery({ slug }, { staleTime: 15000 });
+  const addGuestbook = trpc.invitation.addGuestbook.useMutation({ onSuccess: () => { guestbook.refetch(); setGuestName(""); setGuestMessage(""); toast.success("축하 메시지가 남겨졌어요."); } });
+  const addRsvp = trpc.invitation.addRsvp.useMutation({ onSuccess: () => { setRsvpSent(true); toast.success("참석 응답이 저장되었어요."); } });
+  const [guestName, setGuestName] = useState(""); const [guestMessage, setGuestMessage] = useState(""); const [accountOpen, setAccountOpen] = useState(false); const [rsvpOpen, setRsvpOpen] = useState(false); const [rsvpSent, setRsvpSent] = useState(false);
+  const [rsvp, setRsvp] = useState({ name: "", attendance: "attending" as "attending" | "unable", adults: 1, children: 0, meal: true, contact: "", note: "" });
+  const accounts = useMemo(() => invite.accountInfo.split("\n").map(line => { const [label, ...rest] = line.split("|"); return { label: label?.trim() || "계좌", value: rest.join("|").trim() || line }; }), [invite.accountInfo]);
+  const copy = async (value: string, label: string) => { if (await copyText(value)) toast.success(`${label} 복사 완료`); else toast.error("복사할 수 없어요. 길게 눌러 복사해 주세요."); };
+  const share = async () => { const kakao = (window as any).Kakao; if (kakao?.Share?.sendDefault) { kakao.Share.sendDefault({ objectType: "feed", content: { title: `${invite.babyName}의 첫 번째 생일`, description: invite.invitationTitle, imageUrl: `${location.origin}/manus-storage/og-invitation_44baa7a2.svg`, link: { mobileWebUrl: location.href, webUrl: location.href } } }); return; } if (navigator.share) await navigator.share({ title: `${invite.babyName}의 첫 번째 생일`, text: invite.invitationTitle, url: location.href }); else await copy(location.href, "초대장 링크"); };
+  const mapQuery = encodeURIComponent(`${invite.venueName} ${invite.venueAddress}`);
+  const submitGuestbook = (e: React.FormEvent) => { e.preventDefault(); if (!guestName.trim() || !guestMessage.trim()) return toast.error("이름과 메시지를 모두 입력해 주세요."); addGuestbook.mutate({ name: guestName.trim(), message: guestMessage.trim(), website: "" }); };
+  const submitRsvp = (e: React.FormEvent) => { e.preventDefault(); if (!rsvp.name.trim()) return toast.error("성함을 입력해 주세요."); addRsvp.mutate(rsvp); };
 
-  // If theme is switchable in App.tsx, we can implement theme toggling like this:
-  // const { theme, toggleTheme } = useTheme();
-
-  return (
-    <div className="min-h-screen flex flex-col">
-      <main>
-        {/* Example: lucide-react for icons */}
-        <Loader2 className="animate-spin" />
-        Example Page
-        {/* Example: Streamdown for markdown rendering */}
-        <Streamdown>Any **markdown** content</Streamdown>
-        <Button variant="default">Example Button</Button>
-      </main>
-    </div>
-  );
+  return <main className="invite-shell">
+    <section className="hero"><div className="hero-ribbon ribbon-one" /><div className="hero-copy"><p className="eyebrow">OUR BABY'S FIRST BIRTHDAY</p><h1>{invite.babyName}의<br /><em>첫 번째 생일</em>에</h1><p className="hero-subtitle">{invite.invitationTitle.replace(`${invite.babyName}의 `, "")}</p><div className="hero-date"><strong>{invite.eventDate}</strong><span>{invite.eventTime}</span></div></div><div className="hero-photo"><div className="photo-sheen"><Sparkles size={20} /><span>our little sunshine</span></div></div><div className="scroll-cue">SCROLL TO CELEBRATE <span>↓</span></div></section>
+    <Section eyebrow="INVITATION" className="center-section"><Heart className="section-mark" size={18} fill="currentColor" /><h2>사랑을 가득 담아,<br /><em>초대합니다</em></h2><p>{invite.greeting}</p><div className="signature">서아 가족 드림</div></Section>
+    <Section eyebrow="BABY STORY" className="story-section"><div className="story-grid"><div className="story-photo tall" /><div className="story-photo small" /><div className="story-photo small alt" /></div><p className="story-line">이렇게 작았던 아이가<br />어느새 첫 번째 생일을 맞았습니다.</p><div className="story-photo wide" /></Section>
+    <Section eyebrow="DATE & TIME" className="date-card"><div className="calendar-icon"><span>OCT</span><strong>17</strong></div><div><h3>{invite.eventDate}</h3><p>{invite.eventTime} · 점심 식사</p><p className="muted">소중한 분들과 함께하는 따뜻한 시간</p></div></Section>
+    <Section eyebrow="THE PLACE"><div className="place-card"><div className="place-icon"><MapPin size={22} /></div><h2>{invite.venueName}</h2><p>{invite.venueAddress}</p><div className="place-actions"><a href={`https://map.kakao.com/?q=${mapQuery}`} target="_blank" rel="noreferrer"><Navigation size={15} /> 카카오맵</a><a href={`https://map.naver.com/v5/search/${mapQuery}`} target="_blank" rel="noreferrer"><MapPin size={15} /> 네이버지도</a><button onClick={() => copy(invite.venueAddress, "주소")}><Copy size={15} /> 주소복사</button></div><div className="parking"><strong>주차 안내</strong><p>{invite.parkingInfo}</p></div></div></Section>
+    <Section eyebrow="RSVP" className="rsvp-section"><div className="section-heading"><h2>참석 여부를<br /><em>알려주세요</em></h2><p>준비를 위해 참석 여부를 남겨주시면 감사하겠습니다.</p></div>{rsvpSent ? <div className="success-box"><Heart size={20} fill="currentColor" /><strong>응답이 전달되었어요.</strong><span>함께해 주셔서 고마워요.</span></div> : <><div className="choice-row"><button className={rsvp.attendance === "attending" ? "selected" : ""} onClick={() => setRsvp({ ...rsvp, attendance: "attending" })}>참석할게요 <Heart size={15} fill="currentColor" /></button><button className={rsvp.attendance === "unable" ? "selected" : ""} onClick={() => setRsvp({ ...rsvp, attendance: "unable" })}>아쉽지만 어려워요</button></div><button className="text-toggle" onClick={() => setRsvpOpen(!rsvpOpen)}>{rsvpOpen ? "응답 접기" : "인원 및 메모 입력하기"} {rsvpOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</button>{rsvpOpen && <form className="form-card" onSubmit={submitRsvp}><input placeholder="성함" value={rsvp.name} onChange={e => setRsvp({ ...rsvp, name: e.target.value })} maxLength={80} /><div className="counter-row"><label>성인 <button type="button" onClick={() => setRsvp({ ...rsvp, adults: Math.max(0, rsvp.adults - 1) })}>−</button><b>{rsvp.adults}</b><button type="button" onClick={() => setRsvp({ ...rsvp, adults: Math.min(10, rsvp.adults + 1) })}>+</button></label><label>아이 <button type="button" onClick={() => setRsvp({ ...rsvp, children: Math.max(0, rsvp.children - 1) })}>−</button><b>{rsvp.children}</b><button type="button" onClick={() => setRsvp({ ...rsvp, children: Math.min(10, rsvp.children + 1) })}>+</button></label></div><label className="check"><input type="checkbox" checked={rsvp.meal} onChange={e => setRsvp({ ...rsvp, meal: e.target.checked })} /> 식사 예정</label><input placeholder="연락처 (선택)" value={rsvp.contact} onChange={e => setRsvp({ ...rsvp, contact: e.target.value })} maxLength={40} /><textarea placeholder="전하고 싶은 말씀 (선택)" value={rsvp.note} onChange={e => setRsvp({ ...rsvp, note: e.target.value })} maxLength={300} /><p className="privacy-note">참석 확인을 위해 입력하신 정보는 행사 종료 후 30일간 보관됩니다.</p><button className="primary-button" disabled={addRsvp.isPending}>응답 보내기</button></form>}</>}</Section>
+    <Section eyebrow="GALLERY" className="gallery-section"><div className="gallery-row"><div className="gallery-photo one" /><div className="gallery-photo two" /></div><div className="gallery-photo three" /></Section>
+    <Section eyebrow="MESSAGE" className="guestbook-section"><div className="section-heading"><h2>축하 <em>한마디</em></h2><p>따뜻한 마음을 남겨주세요.</p></div><form className="guest-form" onSubmit={submitGuestbook}><input aria-label="이름" placeholder="이름" value={guestName} onChange={e => setGuestName(e.target.value)} maxLength={40} /><textarea aria-label="축하 메시지" placeholder="축하 메시지를 적어주세요" value={guestMessage} onChange={e => setGuestMessage(e.target.value)} maxLength={300} /><div className="form-foot"><span>{guestMessage.length}/300</span><button className="primary-button" disabled={addGuestbook.isPending}><MessageCircle size={16} /> 남기기</button></div></form><div className="guest-list">{(guestbook.data ?? []).slice(0, 3).map(entry => <article key={entry.id}><p>“{entry.message}”</p><small>{entry.authorName} · {new Date(entry.createdAt).toLocaleDateString("ko-KR")}</small></article>)}{guestbook.data && guestbook.data.length > 3 && <p className="more-note">축하 메시지 {guestbook.data.length}개가 도착했어요.</p>}</div></Section>
+    <Section eyebrow="WITH LOVE" className="account-section"><button className="account-toggle" onClick={() => setAccountOpen(!accountOpen)}><span><span className="tiny-label">마음 전하실 곳</span><strong>계좌번호 확인하기</strong></span>{accountOpen ? <ChevronUp /> : <ChevronDown />}</button>{accountOpen && <div className="accounts">{accounts.map(account => <div className="account-row" key={account.label}><div><small>{account.label}</small><strong>{account.value}</strong></div><button onClick={() => copy(account.value, account.label)}><Copy size={15} /> 복사</button></div>)}</div>}<p className="account-note">멀리서 마음을 전해주시는 분들을 위해<br />조심스럽게 계좌번호를 안내드립니다.</p></Section>
+    <footer><p>서아의 첫 번째 생일을<br /><em>함께 축하해 주셔서 감사합니다.</em></p><div className="footer-bow">⌒</div></footer>
+    <div className="floating-actions"><button onClick={share}><Share2 size={17} /> 카카오톡 공유</button><button onClick={() => copy(location.href, "초대장 링크")}><Copy size={17} /> 링크 복사</button></div>
+  </main>;
 }
