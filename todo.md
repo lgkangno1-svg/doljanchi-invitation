@@ -46,3 +46,20 @@
 - [x] Render uploaded images, GIFs, and muted looping videos in the public hotel invitation
 - [x] Add upload authorization and media-input validation tests
 - [x] Verify the media-management flow with an actual storage upload and public render, then save a new checkpoint
+
+- [x] Establish a luxury first-birthday invitation quality checklist for the final refinement loop
+- [x] Prepare a stronger personal-story hierarchy and real-media placement guidance for the hero and editorial sections
+- [x] Add polished media-loading, fallback, and consent-aware viewing states
+- [x] Improve mobile interaction hierarchy for RSVP, guestbook, gift, maps, and sharing
+- [x] Perform visual, accessibility, performance, and regression review before the next checkpoint
+- [x] Include section-by-section photo and video placement recommendations in the final report
+- [x] Strengthen the peach-ribbon and first-birthday seal identity across all major sections
+- [x] Refine functional-section typography and material treatment to match the editorial opening
+- [x] Use the uploaded hero image, when available, as the server-rendered sharing-card image
+- [x] Emit absolute Open Graph image and page URLs from the active invitation domain
+- [x] Document a verifiable luxury invitation QA checklist and assess the current build against it
+- [x] Add visible hero and gallery media loading and error fallback states
+- [x] Complete and verify a focused mobile UX pass for RSVP, guestbook, gift, maps, and sharing
+- [x] Document keyboard, reduced-motion, image/video loading, and bundle-size review findings
+- [x] Prepare the section-by-section photo and video guide for the final user-facing delivery
+- [x] Use the selected hero image in the Kakao sharing-button payload when available
