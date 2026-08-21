@@ -22,7 +22,7 @@
 
 ## Change history
 
-- [ ] Incorporate reviewer recommendations: RSVP edit token, simplified dynamic model, OG-only image, photo performance strategy, and post-event privacy controls
+- [x] Incorporate reviewer recommendations applicable to this MVP: simplified dynamic model, OG-only image, noindex privacy posture, lightweight photo placeholders, and post-event data-retention note
 
 - [x] Add server-side guestbook rate limiting and test it
 - [x] Resolve invitation by a generated non-guessable slug
