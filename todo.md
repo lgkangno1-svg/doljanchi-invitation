@@ -74,8 +74,8 @@
 - [x] Store the provided administrator password only as a protected environment secret
 - [x] Provide a clear administrator login form and preserve dashboard access after successful login
 - [x] Add authentication and BGM-guidance behavior tests before the next checkpoint
-- [ ] Create and push the completed project to a private GitHub repository without secrets or uploaded user media
+- [x] Create and push the completed project to a private GitHub repository without secrets or uploaded user media
 - [x] Add automated BGM guidance state coverage for first visit and successful playback
 - [x] Remove any local plaintext administrator password artifact and re-run the source secret scan
-- [ ] Save a new checkpoint after the BGM and administrator-login changes
+- [x] Save a new checkpoint after the BGM and administrator-login changes
 - [x] Include the BGM guidance unit test in the configured Vitest server test suite and verify its execution
