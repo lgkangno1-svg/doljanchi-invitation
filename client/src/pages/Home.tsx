@@ -4,6 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { copyText } from "@/lib/copy";
 import { buildVenueLinks } from "@/lib/venue-links";
 import { parseMedia, parseMediaList, type InvitationMedia } from "@/lib/invitation-media";
+import { shouldShowBgmGuide } from "@/lib/bgm";
 import { toast } from "sonner";
 import { ChevronDown, ChevronUp, Copy, MapPin, MessageCircle, Music2, Pause, Play, Share2, Volume2, X } from "lucide-react";
 
@@ -44,6 +45,7 @@ export default function Home() {
   const [rsvpSent, setRsvpSent] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
   const [musicPlaying, setMusicPlaying] = useState(false);
+  const [hasStartedMusic, setHasStartedMusic] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [rsvp, setRsvp] = useState({ name: "", attendance: "attending" as "attending" | "unable", adults: 1, children: 0, meal: true, contact: "", note: "" });
   const accounts = useMemo(() => invite.accountInfo.split("\n").map(line => { const [label, ...rest] = line.split("|"); return { label: label?.trim() || "계좌", value: rest.join("|").trim() || line }; }), [invite.accountInfo]);
@@ -54,7 +56,7 @@ export default function Home() {
   const share = async () => { const kakao = (window as any).Kakao; const shareImage = heroMedia?.kind === "image" ? heroMedia.url : HERO_IMAGE; if (kakao?.Share?.sendDefault) { kakao.Share.sendDefault({ objectType: "feed", content: { title: `${invite.babyName}의 첫 번째 생일`, description: invite.invitationTitle, imageUrl: `${location.origin}${shareImage}`, link: { mobileWebUrl: location.href, webUrl: location.href } } }); return; } if (navigator.share) await navigator.share({ title: `${invite.babyName}의 첫 번째 생일`, text: invite.invitationTitle, url: location.href }); else await copy(location.href, "초대장 링크"); };
   const submitGuestbook = (event: React.FormEvent) => { event.preventDefault(); if (!guestName.trim() || !guestMessage.trim()) return toast.error("이름과 축하 메시지를 모두 입력해 주세요."); addGuestbook.mutate({ name: guestName.trim(), message: guestMessage.trim(), website: "" }); };
   const submitRsvp = (event: React.FormEvent) => { event.preventDefault(); if (!rsvp.name.trim()) return toast.error("성함을 입력해 주세요."); addRsvp.mutate(rsvp); };
-  const toggleMusic = async () => { const audio = audioRef.current; if (!audio) return; if (audio.paused) { try { await audio.play(); setMusicPlaying(true); } catch { toast.error("음악을 재생할 수 없어요."); } } else { audio.pause(); setMusicPlaying(false); } };
+  const toggleMusic = async () => { const audio = audioRef.current; if (!audio) return; if (audio.paused) { try { await audio.play(); setMusicPlaying(true); setHasStartedMusic(true); } catch { toast.error("음악을 재생할 수 없어요."); } } else { audio.pause(); setMusicPlaying(false); } };
 
   return <main className="hotel-invitation">
     <audio ref={audioRef} src={BGM} preload="none" onEnded={() => setMusicPlaying(false)} />
@@ -81,7 +83,7 @@ export default function Home() {
     <Section label="WITH LOVE" className="gift-section"><button className="gift-toggle" onClick={() => setAccountOpen(!accountOpen)}><span><small>마음 전하실 곳</small><b>계좌번호 확인하기</b></span>{accountOpen ? <ChevronUp /> : <ChevronDown />}</button>{accountOpen && <div className="gift-accounts">{accounts.map(account => <div key={account.label}><span><small>{account.label}</small><b>{account.value}</b></span><button onClick={() => copy(account.value, "계좌번호")}><Copy size={15} /> 복사</button></div>)}</div>}<p>멀리서 마음을 전해주시는 분들을 위해<br />조심스럽게 계좌번호를 안내드립니다.</p></Section>
 
     <section className="hotel-closing"><div className="closing-ribbon">⌇</div><p>채원이의 첫 번째 생일을<br /><em>함께 축하해 주셔서 감사합니다.</em></p></section>
-    <div className="music-control"><button aria-label="배경음악 제어" onClick={() => setMusicOpen(!musicOpen)}>{musicOpen ? <X size={20} /> : <Music2 size={20} />}<span>BGM</span></button>{musicOpen && <div className="music-panel"><p>채원이의 첫 번째 생일을 위한 음악</p><div><button aria-label="재생 또는 일시정지" onClick={toggleMusic}>{musicPlaying ? <Pause size={18} /> : <Play size={18} />}</button><span className={musicPlaying ? "playing" : ""} /><Volume2 size={15} /></div></div>}</div>
+    <div className="music-control">{shouldShowBgmGuide(hasStartedMusic, musicPlaying) && <button className="music-guide" onClick={async () => { setMusicOpen(true); await toggleMusic(); }}><span>채원이의 BGM을<br /><b>켜주세요</b></span><i>↘</i></button>}<button aria-label="배경음악 제어" onClick={() => setMusicOpen(!musicOpen)}>{musicOpen ? <X size={20} /> : <Music2 size={20} />}<span>BGM</span></button>{musicOpen && <div className="music-panel"><p>채원이의 첫 번째 생일을 위한 음악</p><div><button aria-label="재생 또는 일시정지" onClick={toggleMusic}>{musicPlaying ? <Pause size={18} /> : <Play size={18} />}</button><span className={musicPlaying ? "playing" : ""} /><Volume2 size={15} /></div></div>}</div>
     <nav className="share-bar"><button onClick={share}><Share2 size={16} /> 카카오톡 공유</button><button onClick={() => copy(location.href, "초대장 링크")}><Copy size={16} /> 링크 복사</button></nav>
   </main>;
 }

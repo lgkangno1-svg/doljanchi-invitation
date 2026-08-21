@@ -12,7 +12,7 @@ import type { TrpcContext } from "./_core/context";
 import { copyText } from "../client/src/lib/copy";
 import { buildVenueLinks } from "../client/src/lib/venue-links";
 
-const context = (role: "admin" | "user" = "user"): TrpcContext => ({ user: { id: 1, openId: "test", name: "Test", email: "test@example.com", loginMethod: "test", role, createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() }, req: {} as TrpcContext["req"], res: {} as TrpcContext["res"] });
+const context = (role: "admin" | "user" = "user"): TrpcContext => ({ user: { id: 1, openId: "test", name: "Test", email: "test@example.com", loginMethod: "test", role, createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() }, adminSession: false, req: {} as TrpcContext["req"], res: {} as TrpcContext["res"] });
 
 describe("invitation interactions", () => {
   it("rejects empty guestbook content", async () => {

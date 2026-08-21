@@ -63,3 +63,19 @@
 - [x] Document keyboard, reduced-motion, image/video loading, and bundle-size review findings
 - [x] Prepare the section-by-section photo and video guide for the final user-facing delivery
 - [x] Use the selected hero image in the Kakao sharing-button payload when available
+
+- [x] Show an enlarged first-visit BGM guidance label and arrow on the hero screen
+- [x] Dismiss the BGM guidance after successful playback begins
+- [x] Verify the BGM guidance state and mobile layout, then save an updated checkpoint
+- [x] Show a clear administrator login call-to-action on the unauthenticated admin route
+- [x] Return the owner to the dashboard after successful administrator login
+- [x] Verify the unauthenticated and authenticated admin route flows through session unit tests and the unauthenticated browser route
+- [x] Add a secure credential-based administrator session using the provided administrator ID
+- [x] Store the provided administrator password only as a protected environment secret
+- [x] Provide a clear administrator login form and preserve dashboard access after successful login
+- [x] Add authentication and BGM-guidance behavior tests before the next checkpoint
+- [ ] Create and push the completed project to a private GitHub repository without secrets or uploaded user media
+- [x] Add automated BGM guidance state coverage for first visit and successful playback
+- [x] Remove any local plaintext administrator password artifact and re-run the source secret scan
+- [ ] Save a new checkpoint after the BGM and administrator-login changes
+- [x] Include the BGM guidance unit test in the configured Vitest server test suite and verify its execution

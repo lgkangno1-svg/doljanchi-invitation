@@ -6,6 +6,8 @@ import { adminProcedure, publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 import { storagePut } from "./storage";
 import { safeMediaFileName, validateMediaUpload } from "./media";
+import { TRPCError } from "@trpc/server";
+import { ADMIN_SESSION_COOKIE, administratorCookieOptions, createAdministratorSession, verifyAdministratorCredentials } from "./adminSession";
 
 const invitationInput = z.object({
   babyName: z.string().trim().min(1).max(80), fatherName: z.string().trim().min(1).max(120), motherName: z.string().trim().min(1).max(120), invitationTitle: z.string().trim().min(1).max(180), greeting: z.string().trim().min(1).max(2000),
@@ -19,6 +21,15 @@ export const appRouter = router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => { const options = getSessionCookieOptions(ctx.req); ctx.res.clearCookie(COOKIE_NAME, { ...options, maxAge: -1 }); return { success: true } as const; }),
   }),
+  adminAuth: router({
+    status: publicProcedure.query(({ ctx }) => ({ authenticated: ctx.adminSession })),
+    login: publicProcedure.input(z.object({ username: z.string().trim().min(1).max(80), password: z.string().min(1).max(200) })).mutation(async ({ input, ctx }) => {
+      if (!verifyAdministratorCredentials(input.username, input.password)) throw new TRPCError({ code: "UNAUTHORIZED", message: "아이디 또는 비밀번호를 확인해 주세요." });
+      const token = await createAdministratorSession(); ctx.res.cookie(ADMIN_SESSION_COOKIE, token, administratorCookieOptions());
+      return { success: true };
+    }),
+    logout: publicProcedure.mutation(({ ctx }) => { ctx.res.clearCookie(ADMIN_SESSION_COOKIE, administratorCookieOptions()); return { success: true }; }),
+  }),
   invitation: router({
     get: publicProcedure.input(z.object({ slug: z.string().trim().min(8).max(96) })).query(({ input }) => db.getOrCreateInvitation(input.slug)),
     guestbook: publicProcedure.input(z.object({ slug: z.string().trim().min(8).max(96) })).query(async ({ input }) => { const invite = await db.getOrCreateInvitation(input.slug); return db.listGuestbook(invite.id); }),
@@ -31,7 +42,7 @@ export const appRouter = router({
     uploadMedia: adminProcedure.input(z.object({ fileName: z.string().min(1).max(140), mimeType: z.string().min(1).max(80), dataBase64: z.string().min(1).max(42_000_000) })).mutation(async ({ input, ctx }) => {
       const { data, kind } = validateMediaUpload(input.fileName, input.mimeType, input.dataBase64);
       const safeName = safeMediaFileName(input.fileName);
-      const stored = await storagePut(`invitations/${ctx.user.id}/${Date.now()}-${safeName}`, data, input.mimeType);
+      const stored = await storagePut(`invitations/${ctx.user?.id ?? "private-admin"}/${Date.now()}-${safeName}`, data, input.mimeType);
       return { url: stored.url, kind, mimeType: input.mimeType, fileName: input.fileName };
     }),
     saveMedia: adminProcedure.input(z.object({ hero: mediaItemInput.nullable(), gallery: z.array(mediaItemInput).max(8) })).mutation(({ input }) => db.updateInvitationMedia(input.hero ? JSON.stringify(input.hero) : null, JSON.stringify(input.gallery))),
