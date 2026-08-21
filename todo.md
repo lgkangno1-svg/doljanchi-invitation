@@ -29,3 +29,13 @@
 - [x] Add Kakao-specific share integration or clearly documented fallback
 - [x] Extract and test account copy helper
 - [x] Verify key interactions and responsive layouts at mobile and desktop sizes
+
+- [x] Replace the public invitation with the approved luxury-hotel editorial design system
+- [x] Apply Chaewon’s real name, date, parents, venue, and KakaoBank account to default invitation content
+- [x] Add a polished venue map preview plus Naver Map, Kakao Map, TMAP, and Kakao Navi actions
+- [x] Refine RSVP, guestbook, gift, and share sections to the approved hotel-event visual hierarchy
+- [x] Add a user-controlled background music player with a calm instrumental track
+- [x] Update server-rendered Open Graph metadata and image for Chaewon’s invitation
+- [x] Re-run tests and verify mobile and desktop renderings of the final design
+- [x] Persist parent names as invitation content and expose them in public and admin views
+- [x] Save and deliver the final luxury-hotel invitation checkpoint

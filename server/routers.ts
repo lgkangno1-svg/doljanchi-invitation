@@ -6,7 +6,7 @@ import { adminProcedure, publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 
 const invitationInput = z.object({
-  babyName: z.string().trim().min(1).max(80), invitationTitle: z.string().trim().min(1).max(180), greeting: z.string().trim().min(1).max(2000),
+  babyName: z.string().trim().min(1).max(80), fatherName: z.string().trim().min(1).max(120), motherName: z.string().trim().min(1).max(120), invitationTitle: z.string().trim().min(1).max(180), greeting: z.string().trim().min(1).max(2000),
   eventDate: z.string().trim().min(1).max(32), eventTime: z.string().trim().min(1).max(64), venueName: z.string().trim().min(1).max(160), venueAddress: z.string().trim().min(1).max(255), parkingInfo: z.string().trim().min(1).max(1000), accountInfo: z.string().trim().min(1).max(1000),
 });
 

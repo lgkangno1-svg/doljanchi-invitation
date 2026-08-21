@@ -16,6 +16,8 @@ export const invitations = mysqlTable("invitations", {
   id: int("id").autoincrement().primaryKey(),
   slug: varchar("slug", { length: 96 }).notNull().unique(),
   babyName: varchar("babyName", { length: 80 }).notNull(),
+  fatherName: varchar("fatherName", { length: 120 }).notNull(),
+  motherName: varchar("motherName", { length: 120 }).notNull(),
   invitationTitle: varchar("invitationTitle", { length: 180 }).notNull(),
   greeting: text("greeting").notNull(),
   eventDate: varchar("eventDate", { length: 32 }).notNull(),

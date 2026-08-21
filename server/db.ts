@@ -33,15 +33,17 @@ export async function getUserByOpenId(openId: string) {
 
 const defaultInvitation = {
   slug: "invite-peach-ribbon-x7k2p",
-  babyName: "서아",
-  invitationTitle: "서아의 첫 번째 생일에 소중한 분들을 초대합니다.",
-  greeting: "작고 사랑스러운 손으로 세상을 배워가는 서아가 어느새 첫 번째 생일을 맞았습니다. 따뜻한 마음으로 함께 축하해 주세요.",
-  eventDate: "2026. 10. 17 SAT",
+  babyName: "채원",
+  fatherName: "강호성",
+  motherName: "Nguyen HongNgoc",
+  invitationTitle: "채원의 첫 번째 생일에 소중한 분들을 초대합니다.",
+  greeting: "저희에게 찾아온 가장 빛나는 선물, 채원이가 어느덧 첫 번째 생일을 맞았습니다. 그동안 보내주신 따뜻한 사랑에 감사드리며, 소중한 분들과 함께 채원이의 첫걸음을 축복하는 자리를 마련했습니다.",
+  eventDate: "2026. 10. 18 SUN",
   eventTime: "12:00 PM",
-  venueName: "그랜드 홀",
-  venueAddress: "서울특별시 ○○구 ○○로 123, 3층",
-  parkingInfo: "건물 지하주차장 이용 · 참석객 3시간 무료 · 출차 전 데스크에서 차량번호를 등록해 주세요.",
-  accountInfo: "아빠 | 국민은행 123-456-789\n엄마 | 신한은행 123-456-789",
+  venueName: "코트야드 메리어트 서울 명동",
+  venueAddress: "서울특별시 중구 남대문로 9",
+  parkingInfo: "호텔 지하 주차장을 이용하실 수 있습니다. 행사 당일 주차 등록 및 세부 안내는 호텔 데스크에서 확인해 주세요.",
+  accountInfo: "강호성 | 카카오뱅크 3333-19-8058955",
   isPublished: 1,
 };
 
