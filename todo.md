@@ -134,4 +134,4 @@
 - [x] Add regression coverage for BGM cue count, viewport-video behavior, and persisted media preservation
 - [x] Update the invitation venue location to Courtyard Marriott Seoul Myeongdong, 3층 한양 1+2홀
 - [x] Verify the updated hall location appears in public and administrator invitation data
-- [ ] Verify saved hero and gallery media references again through the public invitation API after the latest deployment
+- [x] Verify saved hero and gallery media references again through the public invitation API after the latest deployment
