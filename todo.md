@@ -116,3 +116,11 @@
 - [x] Make the right-side plus button instruction unmistakable for adding accompanying attendees
 - [x] Verify the revised RSVP attendee guidance is readable and usable on mobile; user approved the retained hotel-tone layout after visual review
 - [x] Re-check RSVP guidance text and add control visibility with a mobile DOM response check; user approved the retained right-side layout
+- [x] Store age-group metadata for each RSVP companion while preserving existing RSVP records
+- [x] Collect baby names when applicable and add a clear 12세 미만 / 12세 이상 choice for each companion
+- [x] Redesign the RSVP attendee area with clear 부·모·아기 entry guidance and an easy add-another-person control
+- [x] Display companion names and age groups clearly in the administrator RSVP list
+- [x] Verify structured companion RSVP submission and mobile rendering through automated data, render, and mobile DOM-presence checks
+- [x] Confirm the structured 부·모·아기 RSVP controls are visible in the mobile page DOM; user approved completion despite headless-pointer coordinate limitations
+- [ ] Save the structured attendee update and push the latest version to the private GitHub repository
+- [ ] Deliver the live public invitation and administrator page links

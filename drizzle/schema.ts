@@ -49,6 +49,7 @@ export const rsvpResponses = mysqlTable("rsvp_responses", {
   editToken: varchar("editToken", { length: 96 }).notNull().unique(),
   name: varchar("name", { length: 80 }).notNull(),
   companionNames: varchar("companionNames", { length: 2048 }).notNull().default("[]"),
+  attendeeDetails: varchar("attendeeDetails", { length: 4096 }).notNull().default("[]"),
   attendance: mysqlEnum("attendance", ["attending", "unable"]).notNull(),
   adults: int("adults").default(0).notNull(),
   children: int("children").default(0).notNull(),

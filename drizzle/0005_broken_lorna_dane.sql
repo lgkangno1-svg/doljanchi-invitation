@@ -1,0 +1,1 @@
+ALTER TABLE `rsvp_responses` ADD `attendeeDetails` varchar(4096) DEFAULT '[]' NOT NULL;

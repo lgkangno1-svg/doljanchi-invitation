@@ -37,6 +37,19 @@ describe("invitation interactions", () => {
     expect(guestbook.companionNames).toBe(JSON.stringify(["박바다"]));
     expect(rsvp.companionNames).toBe(JSON.stringify(["박바다", "김별"]));
   });
+  it("stores structured father, mother, and baby details with derived age-group totals", async () => {
+    const caller = appRouter.createCaller(context());
+    const attendeeDetails = [
+      { role: "father" as const, name: "강호성", ageGroup: "over12" as const },
+      { role: "mother" as const, name: "Nguyen HongNgoc", ageGroup: "over12" as const },
+      { role: "baby" as const, name: "민준", ageGroup: "under12" as const },
+    ];
+    const result = await caller.invitation.addRsvp({ name: "임시 대표", companionNames: [], attendeeDetails, attendance: "attending", adults: 0, children: 0 });
+    expect(result.name).toBe("강호성");
+    expect(result.companionNames).toBe(JSON.stringify(["Nguyen HongNgoc", "민준"]));
+    expect(result.attendeeDetails).toBe(JSON.stringify(attendeeDetails));
+    expect([result.adults, result.children]).toEqual([2, 1]);
+  });
   it("is SSR-safe when clipboard is unavailable", async () => {
     expect(await copyText("sample")).toBe(false);
   });
