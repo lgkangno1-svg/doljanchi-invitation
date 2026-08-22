@@ -1,0 +1,8 @@
+name = "chaewon-invitation"
+compatibility_date = "2026-08-22"
+pages_build_output_dir = "dist/public"
+
+[[d1_databases]]
+binding = "chaewon_db"
+database_name = "chaewon-db"
+database_id = "8a71af4c-0e0f-4fc1-ab93-97cc5dae62f6"

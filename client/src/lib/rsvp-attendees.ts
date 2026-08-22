@@ -8,17 +8,15 @@ export type RsvpAttendee = {
 };
 
 export const RSVP_ROLE_LABEL: Record<RsvpAttendeeRole, string> = {
-  father: "부 · 아빠",
-  mother: "모 · 엄마",
-  baby: "아기",
-  guest: "추가 일행",
+  father: "참석자",
+  mother: "참석자",
+  baby: "자녀 · 아동",
+  guest: "동행 일행",
 };
 
 export function createInitialRsvpAttendees(): RsvpAttendee[] {
   return [
-    { role: "father", name: "", ageGroup: "over12" },
-    { role: "mother", name: "", ageGroup: "over12" },
-    { role: "baby", name: "", ageGroup: "under12" },
+    { role: "guest", name: "", ageGroup: "over12" },
   ];
 }
 

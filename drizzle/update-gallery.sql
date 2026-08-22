@@ -1,0 +1,1 @@
+UPDATE invitations SET galleryImageUrls = '[{"url":"/manus-storage/chaewon-gallery-feet.jpg","kind":"image","mimeType":"image/jpeg","fileName":"chaewon-gallery-feet.jpg"},{"url":"/manus-storage/chaewon-gallery-hands.jpg","kind":"image","mimeType":"image/jpeg","fileName":"chaewon-gallery-hands.jpg"}]' WHERE slug = 'invite-peach-ribbon-x7k2p';
