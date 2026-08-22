@@ -110,3 +110,5 @@
 - [x] Add a second protected administrator login for the requested account ID 1234
 - [x] Verify both administrator login credentials are accepted without exposing either password in source code
 - [x] Prepare the saved version and a short real-device BGM verification instruction
+- [x] Remove the meal-planning checkbox from the public RSVP form and its submitted client payload
+- [x] Verify RSVP submission still succeeds after removing the meal-planning control

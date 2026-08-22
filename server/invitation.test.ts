@@ -24,16 +24,16 @@ describe("invitation interactions", () => {
     const caller = appRouter.createCaller(context());
     await expect(caller.invitation.addGuestbook({ name: "방문자", message: "x".repeat(301), website: "" })).rejects.toThrow();
   });
-  it("allows an RSVP without a contact number", async () => {
+  it("allows an RSVP without a contact number or a meal-planning selection", async () => {
     const caller = appRouter.createCaller(context());
-    const result = await caller.invitation.addRsvp({ name: "홍길동", attendance: "attending", adults: 1, children: 0, meal: true, note: "축하해요" });
+    const result = await caller.invitation.addRsvp({ name: "홍길동", attendance: "attending", adults: 1, children: 0, note: "축하해요" });
     expect(result.name).toBe("홍길동");
     expect(result.contact).toBeNull();
   });
   it("stores companion names with RSVP and guestbook submissions", async () => {
     const caller = appRouter.createCaller(context());
     const guestbook = await caller.invitation.addGuestbook({ name: "김하늘", companionNames: ["박바다"], message: "축하합니다", website: "" });
-    const rsvp = await caller.invitation.addRsvp({ name: "김하늘", companionNames: ["박바다", "김별"], attendance: "attending", adults: 2, children: 1, meal: true });
+    const rsvp = await caller.invitation.addRsvp({ name: "김하늘", companionNames: ["박바다", "김별"], attendance: "attending", adults: 2, children: 1 });
     expect(guestbook.companionNames).toBe(JSON.stringify(["박바다"]));
     expect(rsvp.companionNames).toBe(JSON.stringify(["박바다", "김별"]));
   });
