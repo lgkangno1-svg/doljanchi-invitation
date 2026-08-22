@@ -1,8 +1,28 @@
-// Preconfigured storage helpers for Manus WebDev templates
-// Uploads via Forge Server presigned URL to S3 (PUT direct).
-// Downloads return /manus-storage/{key} paths served via 307 redirect.
+// Supports Manus Forge storage by default and S3/R2-compatible object storage after external migration.
 
 import { ENV } from "./_core/env";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+
+type ExternalStorageConfig = { bucket: string; publicBaseUrl: string; endpoint?: string; region: string; accessKeyId: string; secretAccessKey: string };
+let externalClient: S3Client | null = null;
+
+function getExternalStorageConfig(): ExternalStorageConfig | null {
+  const bucket = process.env.EXTERNAL_S3_BUCKET;
+  const publicBaseUrl = process.env.EXTERNAL_S3_PUBLIC_BASE_URL;
+  const accessKeyId = process.env.EXTERNAL_S3_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.EXTERNAL_S3_SECRET_ACCESS_KEY;
+  if (!bucket || !publicBaseUrl || !accessKeyId || !secretAccessKey) return null;
+  return { bucket, publicBaseUrl: publicBaseUrl.replace(/\/+$/, ""), endpoint: process.env.EXTERNAL_S3_ENDPOINT, region: process.env.EXTERNAL_S3_REGION || "auto", accessKeyId, secretAccessKey };
+}
+
+export function externalMediaUrl(publicBaseUrl: string, key: string) {
+  return `${publicBaseUrl.replace(/\/+$/, "")}/${normalizeKey(key)}`;
+}
+
+function getExternalClient(config: ExternalStorageConfig) {
+  if (!externalClient) externalClient = new S3Client({ region: config.region, endpoint: config.endpoint, forcePathStyle: process.env.EXTERNAL_S3_FORCE_PATH_STYLE === "true", credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey } });
+  return externalClient;
+}
 
 function getForgeConfig() {
   const forgeUrl = ENV.forgeApiUrl;
@@ -33,6 +53,12 @@ export async function storagePut(
   data: Buffer | Uint8Array | string,
   contentType = "application/octet-stream",
 ): Promise<{ key: string; url: string }> {
+  const external = getExternalStorageConfig();
+  if (external) {
+    const key = appendHashSuffix(normalizeKey(relKey));
+    await getExternalClient(external).send(new PutObjectCommand({ Bucket: external.bucket, Key: key, Body: data, ContentType: contentType }));
+    return { key, url: externalMediaUrl(external.publicBaseUrl, key) };
+  }
   const { forgeUrl, forgeKey } = getForgeConfig();
   const key = appendHashSuffix(normalizeKey(relKey));
 
@@ -73,10 +99,14 @@ export async function storagePut(
 
 export async function storageGet(relKey: string): Promise<{ key: string; url: string }> {
   const key = normalizeKey(relKey);
+  const external = getExternalStorageConfig();
+  if (external) return { key, url: externalMediaUrl(external.publicBaseUrl, key) };
   return { key, url: `/manus-storage/${key}` };
 }
 
 export async function storageGetSignedUrl(relKey: string): Promise<string> {
+  const external = getExternalStorageConfig();
+  if (external) return externalMediaUrl(external.publicBaseUrl, relKey);
   const { forgeUrl, forgeKey } = getForgeConfig();
   const key = normalizeKey(relKey);
 

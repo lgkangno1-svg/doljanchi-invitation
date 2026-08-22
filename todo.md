@@ -147,3 +147,12 @@
 - [x] Verify mini-dashboard totals remain consistent with exported RSVP data
 - [x] Show the exact success feedback '복사되었습니다' after account-number copy; user approved real-device confirmation after automated clipboard contract verification
 - [x] Add a browser-DOM integration test for opening the account section, tapping copy, and rendering '복사되었습니다'
+- [x] Assess an external-hosting migration using a subdomain of avocadoss.co.kr while preserving code, database, media, and admin access
+- [x] Prepare a practical backup and migration checklist for the invitation before the August service interruption
+- [x] Create external-hosting configuration and deployment documentation for the full-stack invitation app
+- [x] Add a safe administrator export for RSVP, guestbook, invitation settings, and persisted media metadata
+- [x] Document media transfer, database import, secrets, and avocadoss.co.kr subdomain cutover steps
+- [x] Verify the external-hosting preparation does not alter the live Manus invitation data or media
+- [x] Compare key public invitation fields and persisted media metadata before finalizing the external-hosting preparation
+- [x] Re-check authenticated administrator dashboard data after external-hosting preparation
+- [x] Compare the exact public and authenticated-admin hero/gallery media metadata and key invitation values
