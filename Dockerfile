@@ -24,10 +24,10 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Only production dependencies
+# All dependencies needed (vite is required at runtime for static serving)
 COPY package.json pnpm-lock.yaml ./
 COPY patches/ ./patches/
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile
 
 # Copy built artifacts
 COPY --from=builder /app/dist ./dist
