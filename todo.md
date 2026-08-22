@@ -135,3 +135,15 @@
 - [x] Update the invitation venue location to Courtyard Marriott Seoul Myeongdong, 3층 한양 1+2홀
 - [x] Verify the updated hall location appears in public and administrator invitation data
 - [x] Verify saved hero and gallery media references again through the public invitation API after the latest deployment
+- [x] Add a protected administrator export that creates a readable Excel workbook for RSVP and guestbook data
+- [x] Add an administrator dashboard action to download the current RSVP and guestbook Excel workbook
+- [x] Make the public account-number copy button explicit and adjacent to the account number
+- [x] Verify exported workbook contents, administrator access control, and account-copy behavior
+- [x] Document the optional email-delivery setup required to send exports to tnfwod@naver.com
+- [x] Verify the public account-number copy action and success feedback after the label change
+- [x] Verify the Excel download action is unavailable before administrator authentication and available after authentication
+- [x] Add an administrator-only mini dashboard for attending teams, 12세 이상 attendees, and 12세 미만 attendees
+- [x] Recalculate the mini-dashboard directly from the latest saved RSVP data and exclude declined responses
+- [x] Verify mini-dashboard totals remain consistent with exported RSVP data
+- [x] Show the exact success feedback '복사되었습니다' after account-number copy; user approved real-device confirmation after automated clipboard contract verification
+- [x] Add a browser-DOM integration test for opening the account section, tapping copy, and rendering '복사되었습니다'

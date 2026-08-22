@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { copyText } from "@/lib/copy";
+import { accountCopySuccessMessage, copyAccountNumber } from "@/lib/account-copy";
 import { buildVenueLinks } from "@/lib/venue-links";
 import { parseMedia, parseMediaList, type InvitationMedia } from "@/lib/invitation-media";
 import { shouldShowBgmGuide, startBgmOnTap } from "@/lib/bgm";
@@ -12,7 +13,8 @@ import { RsvpAttendeeFields } from "@/components/RsvpAttendeeFields";
 import { BgmGuide } from "@/components/BgmGuide";
 import { syncViewportVideo } from "@/lib/viewport-video";
 import { toast } from "sonner";
-import { ChevronDown, ChevronUp, Copy, MapPin, MessageCircle, Music2, Pause, Play, Share2, Volume2, X } from "lucide-react";
+import { Copy, MapPin, MessageCircle, Music2, Pause, Play, Share2, Volume2, X } from "lucide-react";
+import { AccountSection } from "@/components/AccountSection";
 
 const HERO_IMAGE = "/manus-storage/chaewon-hotel-hero_a8c12ed8.jpg";
 const BGM = "/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3";
@@ -58,7 +60,6 @@ export default function Home() {
   const [guestName, setGuestName] = useState("");
   const [guestCompanions, setGuestCompanions] = useState<string[]>([]);
   const [guestMessage, setGuestMessage] = useState("");
-  const [accountOpen, setAccountOpen] = useState(false);
   const [rsvpSent, setRsvpSent] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
   const [musicPlaying, setMusicPlaying] = useState(false);
@@ -70,6 +71,7 @@ export default function Home() {
   const galleryMedia = parseMediaList(invite.galleryImageUrls);
   const venueLinks = buildVenueLinks(invite.venueName, invite.venueAddress);
   const copy = async (value: string, label: string) => { if (await copyText(value)) toast.success(`${label} 복사 완료`); else toast.error("복사할 수 없어요. 길게 눌러 복사해 주세요."); };
+  const copyAccount = async (value: string) => { const copied = await copyAccountNumber(value); if (copied) toast.success(accountCopySuccessMessage()); else toast.error("복사할 수 없어요. 길게 눌러 복사해 주세요."); return copied; };
   const share = async () => { const kakao = (window as any).Kakao; const shareImage = heroMedia?.kind === "image" ? heroMedia.url : HERO_IMAGE; if (kakao?.Share?.sendDefault) { kakao.Share.sendDefault({ objectType: "feed", content: { title: `${invite.babyName}의 첫 번째 생일`, description: invite.invitationTitle, imageUrl: `${location.origin}${shareImage}`, link: { mobileWebUrl: location.href, webUrl: location.href } } }); return; } if (navigator.share) await navigator.share({ title: `${invite.babyName}의 첫 번째 생일`, text: invite.invitationTitle, url: location.href }); else await copy(location.href, "초대장 링크"); };
   const submitGuestbook = (event: React.FormEvent) => { event.preventDefault(); if (!guestName.trim() || !guestMessage.trim()) return toast.error("이름과 축하 메시지를 모두 입력해 주세요."); addGuestbook.mutate({ name: guestName.trim(), companionNames: normalizeCompanionNames(guestCompanions), message: guestMessage.trim(), website: "" }); };
   const submitRsvp = (event: React.FormEvent) => { event.preventDefault(); const summary = summarizeRsvpAttendees(rsvp.attendees); if (!summary.primaryName) return toast.error("참석하시는 분의 성함을 한 분 이상 입력해 주세요."); addRsvp.mutate({ name: summary.primaryName, companionNames: summary.companionNames, attendeeDetails: summary.attendees, attendance: rsvp.attendance, adults: summary.adults, children: summary.children, contact: rsvp.contact, note: rsvp.note }); };
@@ -97,7 +99,7 @@ export default function Home() {
 
     <Section label="GUESTBOOK" className="guestbook-hotel"><h2>채원이에게<br /><em>축하 메시지를 남겨주세요</em></h2><form className="guestbook-form" onSubmit={submitGuestbook}><label>대표 이름<input value={guestName} onChange={event => setGuestName(event.target.value)} maxLength={40} /></label><CompanionFields title="함께 남기는 일행" labelPrefix="일행 이름" max={9} names={guestCompanions} onChange={setGuestCompanions} onAdd={() => setGuestCompanions(addCompanionInput(guestCompanions, 9))} onRemove={index => setGuestCompanions(removeCompanionInput(guestCompanions, index))} /><label>축하 메시지<textarea value={guestMessage} onChange={event => setGuestMessage(event.target.value)} maxLength={300} placeholder="따뜻한 마음을 적어주세요" /></label><div><small>{guestMessage.length} / 300</small><button className="hotel-primary" disabled={addGuestbook.isPending}><MessageCircle size={15} /> 축하 메시지 남기기</button></div><p className="form-privacy light">작성하신 이름과 메시지는 초대장에 공개됩니다.</p></form><div className="message-list">{(guestbook.data ?? []).map(entry => <article key={entry.id}><p>{entry.message}</p><footer><span>{new Date(entry.createdAt).toLocaleDateString("ko-KR")}</span><b><PartyNameLabel primaryName={entry.authorName} companionNames={entry.companionNames} /></b></footer></article>)}{(guestbook.data?.length ?? 0) === 0 && <p className="message-more">첫 번째 축하 메시지를 남겨주세요.</p>}</div></Section>
 
-    <Section label="WITH LOVE" className="gift-section"><button className="gift-toggle" onClick={() => setAccountOpen(!accountOpen)}><span><small>마음 전하실 곳</small><b>계좌번호 확인하기</b></span>{accountOpen ? <ChevronUp /> : <ChevronDown />}</button>{accountOpen && <div className="gift-accounts">{accounts.map(account => <div key={account.label}><span><small>{account.label}</small><b>{account.value}</b></span><button onClick={() => copy(account.value, "계좌번호")}><Copy size={15} /> 복사</button></div>)}</div>}<p>멀리서 마음을 전해주시는 분들을 위해<br />조심스럽게 계좌번호를 안내드립니다.</p></Section>
+    <AccountSection accounts={accounts} copyAccount={copyAccount} />
 
     <section className="hotel-closing"><div className="closing-ribbon">⌇</div><p>채원이의 첫 번째 생일을<br /><em>함께 축하해 주셔서 감사합니다.</em></p></section>
     <div className="music-control">{shouldShowBgmGuide(hasStartedMusic, musicPlaying) && <BgmGuide onActivate={async () => { setMusicOpen(true); await toggleMusic(); }} />}<button aria-label="배경음악 재생 또는 일시정지" onClick={async () => { setMusicOpen(true); await toggleMusic(); }}>{musicPlaying ? <Pause size={20} /> : <Play size={20} />}<span>BGM</span></button>{musicOpen && <div className="music-panel"><p>채원이의 첫 번째 생일을 위한 음악</p><div><button aria-label="재생 또는 일시정지" onClick={toggleMusic}>{musicPlaying ? <Pause size={18} /> : <Play size={18} />}</button><span className={musicPlaying ? "playing" : ""} /><Volume2 size={15} /></div></div>}</div>
