@@ -9,10 +9,11 @@ type CompanionFieldsProps = {
   onChange: (names: string[]) => void;
   onAdd: () => void;
   onRemove: (index: number) => void;
+  guidance?: React.ReactNode;
 };
 
-export function CompanionFields({ title, labelPrefix, max, names, onChange, onAdd, onRemove }: CompanionFieldsProps) {
-  return <div className="companion-inputs"><div><span>{title} <small>(선택)</small></span>{names.length < max && <button type="button" onClick={onAdd}>+ 일행 추가</button>}</div>{names.map((name, index) => <label key={index}>{labelPrefix} {index + 1}<input value={name} maxLength={80} onChange={event => onChange(names.map((current, position) => position === index ? event.target.value : current))} /><button type="button" aria-label={`일행 ${index + 1} 삭제`} onClick={() => onRemove(index)}>×</button></label>)}</div>;
+export function CompanionFields({ title, labelPrefix, max, names, onChange, onAdd, onRemove, guidance }: CompanionFieldsProps) {
+  return <div className="companion-inputs">{guidance && <div className="companion-guidance" role="note">{guidance}</div>}<div><span>{title} <small>(선택)</small></span>{names.length < max && <button className="companion-add-button" type="button" aria-label="오른쪽 추가 버튼으로 일행 성함 입력칸 추가" onClick={onAdd}><b aria-hidden="true">+</b><span>일행 추가</span></button>}</div>{names.map((name, index) => <label key={index}>{labelPrefix} {index + 1}<input value={name} maxLength={80} onChange={event => onChange(names.map((current, position) => position === index ? event.target.value : current))} /><button type="button" aria-label={`일행 ${index + 1} 삭제`} onClick={() => onRemove(index)}>×</button></label>)}</div>;
 }
 
 export function PartyNameLabel({ primaryName, companionNames }: { primaryName: string; companionNames: string | null | undefined }) {

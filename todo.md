@@ -112,3 +112,7 @@
 - [x] Prepare the saved version and a short real-device BGM verification instruction
 - [x] Remove the meal-planning checkbox from the public RSVP form and its submitted client payload
 - [x] Verify RSVP submission still succeeds after removing the meal-planning control
+- [x] Add prominent RSVP guidance asking visitors to enter every attendee’s full name accurately
+- [x] Make the right-side plus button instruction unmistakable for adding accompanying attendees
+- [x] Verify the revised RSVP attendee guidance is readable and usable on mobile; user approved the retained hotel-tone layout after visual review
+- [x] Re-check RSVP guidance text and add control visibility with a mobile DOM response check; user approved the retained right-side layout
