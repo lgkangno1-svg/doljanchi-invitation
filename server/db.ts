@@ -40,7 +40,7 @@ const defaultInvitation = {
   greeting: "저희에게 찾아온 가장 빛나는 선물, 채원이가 어느덧 첫 번째 생일을 맞았습니다. 그동안 보내주신 따뜻한 사랑에 감사드리며, 소중한 분들과 함께 채원이의 첫걸음을 축복하는 자리를 마련했습니다.",
   eventDate: "2026. 10. 18 SUN",
   eventTime: "12:00 PM",
-  venueName: "코트야드 메리어트 서울 명동",
+  venueName: "코트야드 메리어트 서울 명동 · 3층 한양 1+2홀",
   venueAddress: "서울특별시 중구 남대문로 9",
   parkingInfo: "호텔 지하 주차장을 이용하실 수 있습니다. 행사 당일 주차 등록 및 세부 안내는 호텔 데스크에서 확인해 주세요.",
   heroImageUrl: null,
@@ -61,8 +61,13 @@ export async function getOrCreateInvitation(slug = defaultInvitation.slug) {
 export async function updateInvitation(data: Partial<typeof defaultInvitation>) {
   const db = await getDb(); if (!db) return getOrCreateInvitation();
   const current = await getOrCreateInvitation();
-  await db.update(invitations).set(data).where(eq(invitations.id, current.id));
+  await db.update(invitations).set(preserveManagedMedia(data)).where(eq(invitations.id, current.id));
   return getOrCreateInvitation();
+}
+
+export function preserveManagedMedia(data: Partial<typeof defaultInvitation>) {
+  const { heroImageUrl: _heroImageUrl, galleryImageUrls: _galleryImageUrls, ...contentData } = data;
+  return contentData;
 }
 
 export async function updateInvitationMedia(heroImageUrl: string | null, galleryImageUrls: string) {

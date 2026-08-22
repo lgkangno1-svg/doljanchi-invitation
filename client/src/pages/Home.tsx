@@ -9,13 +9,15 @@ import { addCompanionInput, normalizeCompanionNames, removeCompanionInput } from
 import { createInitialRsvpAttendees, summarizeRsvpAttendees } from "@/lib/rsvp-attendees";
 import { CompanionFields, PartyNameLabel } from "@/components/CompanionFields";
 import { RsvpAttendeeFields } from "@/components/RsvpAttendeeFields";
+import { BgmGuide } from "@/components/BgmGuide";
+import { syncViewportVideo } from "@/lib/viewport-video";
 import { toast } from "sonner";
 import { ChevronDown, ChevronUp, Copy, MapPin, MessageCircle, Music2, Pause, Play, Share2, Volume2, X } from "lucide-react";
 
 const HERO_IMAGE = "/manus-storage/chaewon-hotel-hero_a8c12ed8.jpg";
 const BGM = "/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3";
 const VENUE_COORDS = { lat: 37.5636, lng: 126.9791 };
-const fallback = { id: 0, babyName: "채원", fatherName: "강호성", motherName: "NGUYEN HONG NGOC", invitationTitle: "채원의 첫 번째 생일에 소중한 분들을 초대합니다.", greeting: "저희에게 찾아온 가장 빛나는 선물, 채원이가 어느덧 첫 번째 생일을 맞았습니다. 그동안 보내주신 따뜻한 사랑에 감사드리며, 소중한 분들과 함께 채원이의 첫걸음을 축복하는 자리를 마련했습니다.", eventDate: "2026. 10. 18 SUN", eventTime: "12:00 PM", venueName: "코트야드 메리어트 서울 명동", venueAddress: "서울특별시 중구 남대문로 9", parkingInfo: "호텔 지하 주차장을 이용하실 수 있습니다. 행사 당일 주차 등록 및 세부 안내는 호텔 데스크에서 확인해 주세요.", heroImageUrl: null, galleryImageUrls: null, accountInfo: "강호성 | 카카오뱅크 3333-19-8058955" };
+const fallback = { id: 0, babyName: "채원", fatherName: "강호성", motherName: "NGUYEN HONG NGOC", invitationTitle: "채원의 첫 번째 생일에 소중한 분들을 초대합니다.", greeting: "저희에게 찾아온 가장 빛나는 선물, 채원이가 어느덧 첫 번째 생일을 맞았습니다. 그동안 보내주신 따뜻한 사랑에 감사드리며, 소중한 분들과 함께 채원이의 첫걸음을 축복하는 자리를 마련했습니다.", eventDate: "2026. 10. 18 SUN", eventTime: "12:00 PM", venueName: "코트야드 메리어트 서울 명동 · 3층 한양 1+2홀", venueAddress: "서울특별시 중구 남대문로 9", parkingInfo: "호텔 지하 주차장을 이용하실 수 있습니다. 행사 당일 주차 등록 및 세부 안내는 호텔 데스크에서 확인해 주세요.", heroImageUrl: null, galleryImageUrls: null, accountInfo: "강호성 | 카카오뱅크 3333-19-8058955" };
 
 function Section({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
   return <section className={`hotel-section ${className}`}><p className="section-label">{label}</p>{children}</section>;
@@ -27,10 +29,20 @@ function useReducedMotion() { const [reduced, setReduced] = useState(false); use
 
 function InvitationMediaView({ media, fallback, alt, className = "", priority = false }: { media: InvitationMedia | null; fallback: string; alt: string; className?: string; priority?: boolean }) {
   const reducedMotion = useReducedMotion();
-  const source = media?.url || fallback; const [loading, setLoading] = useState(true); const [failed, setFailed] = useState(false);
+  const source = media?.url || fallback; const [loading, setLoading] = useState(true); const [failed, setFailed] = useState(false); const videoRef = useRef<HTMLVideoElement>(null);
   useEffect(() => { setLoading(true); setFailed(false); }, [source]);
+  useEffect(() => {
+    if (media?.kind !== "video") return;
+    const video = videoRef.current;
+    if (!video) return;
+    const sync = (visible: boolean) => { void syncViewportVideo(video, visible, reducedMotion); };
+    if (typeof IntersectionObserver === "undefined") { sync(true); return; }
+    const observer = new IntersectionObserver(entries => { const entry = entries[0]; if (entry) sync(entry.isIntersecting && entry.intersectionRatio >= 0.25); }, { threshold: [0, 0.25, 0.6] });
+    observer.observe(video);
+    return () => { observer.disconnect(); video.pause(); };
+  }, [media?.kind, source, reducedMotion]);
   return <div className={`invitation-media ${className} ${failed ? "media-error" : ""}`} aria-busy={loading}>
-    {failed ? <><img src={fallback} alt={alt} loading={priority ? "eager" : "lazy"} /><span className="media-status">미디어를 불러오지 못해 기본 이미지로 표시합니다.</span></> : media?.kind === "video" ? <video src={source} poster={fallback} autoPlay={!reducedMotion} muted loop playsInline preload="metadata" aria-label={alt} onLoadedData={() => setLoading(false)} onError={() => { setLoading(false); setFailed(true); }} /> : <img src={source} alt={alt} loading={priority ? "eager" : "lazy"} onLoad={() => setLoading(false)} onError={() => { setLoading(false); setFailed(true); }} />}
+    {failed ? <><img src={fallback} alt={alt} loading={priority ? "eager" : "lazy"} /><span className="media-status">미디어를 불러오지 못해 기본 이미지로 표시합니다.</span></> : media?.kind === "video" ? <video ref={videoRef} src={source} poster={fallback} muted loop playsInline preload="metadata" aria-label={alt} onLoadedData={() => setLoading(false)} onError={() => { setLoading(false); setFailed(true); }} /> : <img src={source} alt={alt} loading={priority ? "eager" : "lazy"} onLoad={() => setLoading(false)} onError={() => { setLoading(false); setFailed(true); }} />}
     {loading && !failed && <span className="media-status media-loading">사진을 준비하고 있어요…</span>}
   </div>;
 }
@@ -88,7 +100,7 @@ export default function Home() {
     <Section label="WITH LOVE" className="gift-section"><button className="gift-toggle" onClick={() => setAccountOpen(!accountOpen)}><span><small>마음 전하실 곳</small><b>계좌번호 확인하기</b></span>{accountOpen ? <ChevronUp /> : <ChevronDown />}</button>{accountOpen && <div className="gift-accounts">{accounts.map(account => <div key={account.label}><span><small>{account.label}</small><b>{account.value}</b></span><button onClick={() => copy(account.value, "계좌번호")}><Copy size={15} /> 복사</button></div>)}</div>}<p>멀리서 마음을 전해주시는 분들을 위해<br />조심스럽게 계좌번호를 안내드립니다.</p></Section>
 
     <section className="hotel-closing"><div className="closing-ribbon">⌇</div><p>채원이의 첫 번째 생일을<br /><em>함께 축하해 주셔서 감사합니다.</em></p></section>
-    <div className="music-control">{shouldShowBgmGuide(hasStartedMusic, musicPlaying) && <button className="music-guide" onClick={async () => { setMusicOpen(true); await toggleMusic(); }}><span>여기를 클릭하세요<br /><b>채원이의 BGM</b></span><i>↘</i></button>}<button aria-label="배경음악 재생 또는 일시정지" onClick={async () => { setMusicOpen(true); await toggleMusic(); }}>{musicPlaying ? <Pause size={20} /> : <Play size={20} />}<span>BGM</span></button>{musicOpen && <div className="music-panel"><p>채원이의 첫 번째 생일을 위한 음악</p><div><button aria-label="재생 또는 일시정지" onClick={toggleMusic}>{musicPlaying ? <Pause size={18} /> : <Play size={18} />}</button><span className={musicPlaying ? "playing" : ""} /><Volume2 size={15} /></div></div>}</div>
+    <div className="music-control">{shouldShowBgmGuide(hasStartedMusic, musicPlaying) && <BgmGuide onActivate={async () => { setMusicOpen(true); await toggleMusic(); }} />}<button aria-label="배경음악 재생 또는 일시정지" onClick={async () => { setMusicOpen(true); await toggleMusic(); }}>{musicPlaying ? <Pause size={20} /> : <Play size={20} />}<span>BGM</span></button>{musicOpen && <div className="music-panel"><p>채원이의 첫 번째 생일을 위한 음악</p><div><button aria-label="재생 또는 일시정지" onClick={toggleMusic}>{musicPlaying ? <Pause size={18} /> : <Play size={18} />}</button><span className={musicPlaying ? "playing" : ""} /><Volume2 size={15} /></div></div>}</div>
     <nav className="share-bar"><button onClick={share}><Share2 size={16} /> 카카오톡 공유</button><button onClick={() => copy(location.href, "초대장 링크")}><Copy size={16} /> 링크 복사</button></nav>
   </main>;
 }

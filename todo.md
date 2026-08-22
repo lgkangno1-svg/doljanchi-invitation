@@ -128,3 +128,10 @@
 - [x] Verify the updated mother name appears consistently in public and administrator views
 - [x] Update the server default invitation mother name to NGUYEN HONG NGOC
 - [x] Verify the public invitation and live authenticated administrator dashboard API responses show NGUYEN HONG NGOC
+- [x] Replace duplicate BGM directional cues with one animated arrow that guides visitors to the BGM control
+- [x] Autoplay muted invitation videos when they enter the visitor viewport and pause them when they leave
+- [x] Verify saved administrator hero and gallery media remain referenced after application code updates and redeployment
+- [x] Add regression coverage for BGM cue count, viewport-video behavior, and persisted media preservation
+- [x] Update the invitation venue location to Courtyard Marriott Seoul Myeongdong, 3층 한양 1+2홀
+- [x] Verify the updated hall location appears in public and administrator invitation data
+- [ ] Verify saved hero and gallery media references again through the public invitation API after the latest deployment
