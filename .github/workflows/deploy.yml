@@ -1,4 +1,4 @@
-name: Deploy to Railway
+name: Deploy to Mini PC
 
 on:
   push:
@@ -31,11 +31,34 @@ jobs:
           pnpm check
           pnpm test
 
-      - name: Install Railway CLI
-        run: npm i -g @railway/cli
+      - name: Build Docker image
+        run: docker build -t doljanchi-invitation:latest .
 
-      - name: Deploy to Railway
-        if: env.RAILWAY_TOKEN != ''
-        run: railway up --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      - name: Save Docker image as tar
+        run: docker save doljanchi-invitation:latest | gzip > doljanchi-invitation.tar.gz
+
+      - name: Copy image to Mini PC via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.MINIPC_HOST }}
+          username: ${{ secrets.MINIPC_USER }}
+          key: ${{ secrets.MINIPC_SSH_KEY }}
+          port: ${{ secrets.MINIPC_PORT || 22 }}
+          source: "doljanchi-invitation.tar.gz,docker-compose.yml"
+          target: "~/doljanchi-invitation"
+
+      - name: Deploy on Mini PC via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.MINIPC_HOST }}
+          username: ${{ secrets.MINIPC_USER }}
+          key: ${{ secrets.MINIPC_SSH_KEY }}
+          port: ${{ secrets.MINIPC_PORT || 22 }}
+          script: |
+            cd ~/doljanchi-invitation
+            docker load < doljanchi-invitation.tar.gz
+            docker compose down
+            docker compose up -d
+            docker image prune -f
+            echo "✅ Deploy complete"
+
