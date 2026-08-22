@@ -124,3 +124,7 @@
 - [x] Confirm the structured 부·모·아기 RSVP controls are visible in the mobile page DOM; user approved completion despite headless-pointer coordinate limitations
 - [x] Save the structured attendee update and push the latest version to the private GitHub repository
 - [x] Deliver the live public invitation and administrator page links
+- [x] Update the stored invitation mother name and fallback display value to NGUYEN HONG NGOC
+- [x] Verify the updated mother name appears consistently in public and administrator views
+- [x] Update the server default invitation mother name to NGUYEN HONG NGOC
+- [x] Verify the public invitation and live authenticated administrator dashboard API responses show NGUYEN HONG NGOC

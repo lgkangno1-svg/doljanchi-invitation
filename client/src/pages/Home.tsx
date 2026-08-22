@@ -15,7 +15,7 @@ import { ChevronDown, ChevronUp, Copy, MapPin, MessageCircle, Music2, Pause, Pla
 const HERO_IMAGE = "/manus-storage/chaewon-hotel-hero_a8c12ed8.jpg";
 const BGM = "/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3";
 const VENUE_COORDS = { lat: 37.5636, lng: 126.9791 };
-const fallback = { id: 0, babyName: "채원", fatherName: "강호성", motherName: "Nguyen HongNgoc", invitationTitle: "채원의 첫 번째 생일에 소중한 분들을 초대합니다.", greeting: "저희에게 찾아온 가장 빛나는 선물, 채원이가 어느덧 첫 번째 생일을 맞았습니다. 그동안 보내주신 따뜻한 사랑에 감사드리며, 소중한 분들과 함께 채원이의 첫걸음을 축복하는 자리를 마련했습니다.", eventDate: "2026. 10. 18 SUN", eventTime: "12:00 PM", venueName: "코트야드 메리어트 서울 명동", venueAddress: "서울특별시 중구 남대문로 9", parkingInfo: "호텔 지하 주차장을 이용하실 수 있습니다. 행사 당일 주차 등록 및 세부 안내는 호텔 데스크에서 확인해 주세요.", heroImageUrl: null, galleryImageUrls: null, accountInfo: "강호성 | 카카오뱅크 3333-19-8058955" };
+const fallback = { id: 0, babyName: "채원", fatherName: "강호성", motherName: "NGUYEN HONG NGOC", invitationTitle: "채원의 첫 번째 생일에 소중한 분들을 초대합니다.", greeting: "저희에게 찾아온 가장 빛나는 선물, 채원이가 어느덧 첫 번째 생일을 맞았습니다. 그동안 보내주신 따뜻한 사랑에 감사드리며, 소중한 분들과 함께 채원이의 첫걸음을 축복하는 자리를 마련했습니다.", eventDate: "2026. 10. 18 SUN", eventTime: "12:00 PM", venueName: "코트야드 메리어트 서울 명동", venueAddress: "서울특별시 중구 남대문로 9", parkingInfo: "호텔 지하 주차장을 이용하실 수 있습니다. 행사 당일 주차 등록 및 세부 안내는 호텔 데스크에서 확인해 주세요.", heroImageUrl: null, galleryImageUrls: null, accountInfo: "강호성 | 카카오뱅크 3333-19-8058955" };
 
 function Section({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
   return <section className={`hotel-section ${className}`}><p className="section-label">{label}</p>{children}</section>;

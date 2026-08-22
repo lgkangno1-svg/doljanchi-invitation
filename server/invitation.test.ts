@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("./db", () => ({
-  getOrCreateInvitation: vi.fn(async () => ({ id: 1, slug: "invite-peach-ribbon", babyName: "서아", invitationTitle: "초대", greeting: "인사", eventDate: "2026. 10. 17 SAT", eventTime: "12:00 PM", venueName: "그랜드 홀", venueAddress: "주소", parkingInfo: "주차", accountInfo: "계좌", isPublished: 1 })),
+  getOrCreateInvitation: vi.fn(async () => ({ id: 1, slug: "invite-peach-ribbon", babyName: "서아", fatherName: "강호성", motherName: "NGUYEN HONG NGOC", invitationTitle: "초대", greeting: "인사", eventDate: "2026. 10. 17 SAT", eventTime: "12:00 PM", venueName: "그랜드 홀", venueAddress: "주소", parkingInfo: "주차", accountInfo: "계좌", isPublished: 1 })),
   createGuestbook: vi.fn(async (_id: number, name: string, message: string, companionNames: string[] = []) => ({ id: 1, authorName: name, companionNames: JSON.stringify(companionNames), message })),
   createRsvp: vi.fn(async (data: any) => ({ ...data, id: 1, editToken: "token" })), canSubmitGuestbook: vi.fn(() => true),
   listGuestbook: vi.fn(async () => []), listAllGuestbook: vi.fn(async () => []), listRsvp: vi.fn(async () => []),
@@ -41,12 +41,12 @@ describe("invitation interactions", () => {
     const caller = appRouter.createCaller(context());
     const attendeeDetails = [
       { role: "father" as const, name: "강호성", ageGroup: "over12" as const },
-      { role: "mother" as const, name: "Nguyen HongNgoc", ageGroup: "over12" as const },
+      { role: "mother" as const, name: "NGUYEN HONG NGOC", ageGroup: "over12" as const },
       { role: "baby" as const, name: "민준", ageGroup: "under12" as const },
     ];
     const result = await caller.invitation.addRsvp({ name: "임시 대표", companionNames: [], attendeeDetails, attendance: "attending", adults: 0, children: 0 });
     expect(result.name).toBe("강호성");
-    expect(result.companionNames).toBe(JSON.stringify(["Nguyen HongNgoc", "민준"]));
+    expect(result.companionNames).toBe(JSON.stringify(["NGUYEN HONG NGOC", "민준"]));
     expect(result.attendeeDetails).toBe(JSON.stringify(attendeeDetails));
     expect([result.adults, result.children]).toEqual([2, 1]);
   });
@@ -63,6 +63,12 @@ describe("invitation interactions", () => {
   it("requires both parent names when an admin updates invitation content", async () => {
     const caller = appRouter.createCaller(context("admin"));
     await expect(caller.admin.updateInvitation({ babyName: "채원", invitationTitle: "초대", greeting: "인사", eventDate: "2026. 10. 18 SUN", eventTime: "12:00 PM", venueName: "코트야드 메리어트 서울 명동", venueAddress: "서울특별시 중구 남대문로 9", parkingInfo: "주차 안내", accountInfo: "강호성 | 카카오뱅크 3333-19-8058955" } as any)).rejects.toThrow();
+  });
+  it("returns the updated mother name to public and administrator invitation views", async () => {
+    const publicInvite = await appRouter.createCaller(context()).invitation.get({ slug: "invite-peach-ribbon" });
+    const dashboard = await appRouter.createCaller(context("admin")).admin.dashboard();
+    expect(publicInvite.motherName).toBe("NGUYEN HONG NGOC");
+    expect(dashboard.invitation.motherName).toBe("NGUYEN HONG NGOC");
   });
   it("blocks non-admin media uploads before any file can be stored", async () => {
     const caller = appRouter.createCaller(context("user"));
