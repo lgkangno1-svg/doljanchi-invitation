@@ -122,5 +122,5 @@
 - [x] Display companion names and age groups clearly in the administrator RSVP list
 - [x] Verify structured companion RSVP submission and mobile rendering through automated data, render, and mobile DOM-presence checks
 - [x] Confirm the structured 부·모·아기 RSVP controls are visible in the mobile page DOM; user approved completion despite headless-pointer coordinate limitations
-- [ ] Save the structured attendee update and push the latest version to the private GitHub repository
-- [ ] Deliver the live public invitation and administrator page links
+- [x] Save the structured attendee update and push the latest version to the private GitHub repository
+- [x] Deliver the live public invitation and administrator page links
