@@ -161,3 +161,10 @@
 - [x] Hand off Cloudflare DNS and external-hosting account access assessment for avocadoss.co.kr to an authorized AI via the deployment command file
 - [x] Hand off public and administrator subdomain configuration after external hosting is available to an authorized AI via the deployment command file
 - [x] Hand off TLS, public invitation routing, administrator routing, and authentication verification on custom subdomains to the authorized AI via the deployment command file
+- [x] Split the public venue title into hotel name and 3층 한양 1+2홀 on separate lines
+- [x] Update map button destinations to search only for 서울 코트야드 메리어트 명동
+- [x] Verify the public venue display, administrator data, and all map-link search targets
+- [x] Update the authorized external deployment Markdown with the final venue display and map-search configuration
+- [x] Apply the same two-line venue formatting to the hero venue text
+- [x] Verify the authenticated administrator dashboard returns the saved two-line venue value
+- [x] Add regression coverage for every public venue display and all four hotel-only map targets

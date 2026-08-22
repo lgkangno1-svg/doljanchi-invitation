@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 vi.mock("./db", () => ({
   getOrCreateInvitation: vi.fn(async () => ({ id: 1, slug: "invite-peach-ribbon", babyName: "서아", fatherName: "강호성", motherName: "NGUYEN HONG NGOC", invitationTitle: "초대", greeting: "인사", eventDate: "2026. 10. 17 SAT", eventTime: "12:00 PM", venueName: "그랜드 홀", venueAddress: "주소", parkingInfo: "주차", accountInfo: "계좌", isPublished: 1 })),
@@ -54,11 +56,21 @@ describe("invitation interactions", () => {
     expect(await copyText("sample")).toBe(false);
   });
   it("builds map and navigation links for the verified hotel destination", () => {
-    const links = buildVenueLinks("코트야드 메리어트 서울 명동", "서울특별시 중구 남대문로 9");
-    expect(links.naver).toContain(encodeURIComponent("코트야드 메리어트 서울 명동 서울특별시 중구 남대문로 9"));
-    expect(links.kakaoMap).toContain("map.kakao.com");
+    const links = buildVenueLinks("코트야드 메리어트 서울 명동 · 3층 한양 1+2홀", "서울특별시 중구 남대문로 9");
+    expect(links.naver).toContain(encodeURIComponent("서울 코트야드 메리어트 명동"));
+    expect(links.kakaoMap).toContain(encodeURIComponent("서울 코트야드 메리어트 명동"));
+    expect(links.tmap).toContain(encodeURIComponent("서울 코트야드 메리어트 명동"));
+    expect(links.kakaoNavi).toContain(encodeURIComponent("서울 코트야드 메리어트 명동"));
     expect(links.tmap).toContain("goalx=126.9791");
     expect(links.kakaoNavi).toContain("coordType=wgs84");
+  });
+  it("formats the hotel and hall detail on separate public invitation lines", async () => {
+    const { formatVenueDisplay } = await import("../client/src/lib/venue-display");
+    expect(formatVenueDisplay("코트야드 메리어트 서울 명동 · 3층 한양 1+2홀")).toBe("코트야드 메리어트 서울 명동\n3층 한양 1+2홀");
+    expect(formatVenueDisplay("코트야드 메리어트 서울 명동\n3층 한양 1+2홀")).toBe("코트야드 메리어트 서울 명동\n3층 한양 1+2홀");
+    const homeSource = readFileSync(resolve(process.cwd(), "client/src/pages/Home.tsx"), "utf8");
+    expect(homeSource).toContain('<small className="hero-venue">{formatVenueDisplay(invite.venueName)}</small>');
+    expect(homeSource).toContain('<h3>{formatVenueDisplay(invite.venueName)}</h3>');
   });
   it("requires both parent names when an admin updates invitation content", async () => {
     const caller = appRouter.createCaller(context("admin"));
