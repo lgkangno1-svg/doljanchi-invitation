@@ -4,10 +4,9 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 const gallery = [
-  { url: "/manus-storage/chaewon-lace-portrait_655313c0.jpg", kind: "image" as const, mimeType: "image/jpeg", fileName: "chaewon-lace-portrait.jpg" },
-  { url: "/manus-storage/chaewon-tiny-feet_820c9f73.webp", kind: "image" as const, mimeType: "image/webp", fileName: "chaewon-tiny-feet.webp" },
+  { url: "/manus-storage/chaewon-lace-portrait-enhanced_d7bb26ce.png", kind: "image" as const, mimeType: "image/png", fileName: "chaewon-lace-portrait-enhanced.png" },
   { url: "/manus-storage/chaewon-blossom-smile_5fda8c96.webp", kind: "image" as const, mimeType: "image/webp", fileName: "chaewon-blossom-smile.webp" },
-  { url: "/manus-storage/chaewon-newborn-hands_8ad9145f.webp", kind: "image" as const, mimeType: "image/webp", fileName: "chaewon-newborn-hands.webp" },
+  { url: "/manus-storage/chaewon-blossom-smile-close_91503bc2.webp", kind: "image" as const, mimeType: "image/webp", fileName: "chaewon-blossom-smile-close.webp" },
   { url: "/manus-storage/chaewon-blossom-knit_72c5ef3a.webp", kind: "image" as const, mimeType: "image/webp", fileName: "chaewon-blossom-knit.webp" },
 ];
 
@@ -28,15 +27,13 @@ describe("public curated gallery rendering", () => {
       ...gallery.map(item => item.url),
     ]);
     expect(html).toContain("gallery-portrait");
-    expect(html).toContain("gallery-detail");
     expect(html).toContain("seasonal-transition-media");
-    expect(html).toContain("gallery-hands");
+    expect(html).toContain("gallery-blossom-close");
     expect(html).toContain("gallery-blossom");
-    const sourceInSlot = (slot: string) => html.match(new RegExp(`<div[^>]*class="[^"]*${slot}[^"]*"[^>]*>[\\s\\S]*?<img[^>]*src="([^"]+)"`))?.[1];
+    const sourceInSlot = (slot: string) => html.match(new RegExp(`<div[^>]*class="(?:[^"]*\\s)?${slot}(?:\\s[^"]*)?"[^>]*>[\\s\\S]*?<img[^>]*src="([^"]+)"`))?.[1];
     expect(sourceInSlot("gallery-portrait")).toBe(gallery[0].url);
-    expect(sourceInSlot("gallery-detail")).toBe(gallery[1].url);
-    expect(sourceInSlot("seasonal-transition-media")).toBe(gallery[2].url);
-    expect(sourceInSlot("gallery-hands")).toBe(gallery[3].url);
-    expect(sourceInSlot("gallery-blossom")).toBe(gallery[4].url);
+    expect(sourceInSlot("seasonal-transition-media")).toBe(gallery[1].url);
+    expect(sourceInSlot("gallery-blossom-close")).toBe(gallery[2].url);
+    expect(sourceInSlot("gallery-blossom")).toBe(gallery[3].url);
   });
 });

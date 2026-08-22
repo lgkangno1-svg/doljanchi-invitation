@@ -177,3 +177,8 @@
 - [x] Verify the public invitation payload preserves the exact five gallery URLs and their curated order
 - [x] Add a rendered public-gallery test that verifies the five photo URLs bind to their intended slots in order
 - [x] Assert each uploaded photo URL is rendered inside its exact intended public gallery slot
+- [x] Create a natural, full-color enhancement of the first lace portrait without changing the baby’s identity or pose
+- [x] Remove the current second gallery photo from the public composition
+- [x] Replace the final three gallery images with the user-specified 3rd, 4th, and 5th blossom photos
+- [x] Use face-preserving layouts so the baby’s face remains fully visible in all three replacement photos
+- [x] Verify the revised gallery order, mobile rendering, and preserved cake hero media
