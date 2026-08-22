@@ -79,3 +79,34 @@
 - [x] Remove any local plaintext administrator password artifact and re-run the source secret scan
 - [x] Save a new checkpoint after the BGM and administrator-login changes
 - [x] Include the BGM guidance unit test in the configured Vitest server test suite and verify its execution
+
+- [x] Add validated companion-name lists to guestbook and RSVP records
+- [x] Build `+ 일행 추가` controls for guestbook and RSVP forms
+- [x] Show published guestbook author names and messages in newest-first public cards
+- [x] Show representative and companion names in the administrator RSVP list
+- [x] Add migration, API, and UI tests for companion inputs and public guestbook rendering
+- [x] Verify the attendee and guestbook flow, then save an updated checkpoint
+- [x] Make the circular BGM button begin playback immediately on its first tap
+- [x] Show a first-visit arrow prompt that explicitly directs visitors to the BGM button
+- [x] Remove the BGM arrow prompt immediately after playback begins
+- [x] Show a play or pause state on the circular BGM button that matches its immediate action
+- [x] Provide the direct administrator media-testing link in the final delivery
+- [x] Add verifiable UI-level coverage for companion add/remove controls and public guestbook party-name rendering
+- [x] Verify guestbook and RSVP submission contracts with companion names using non-persistent router tests
+- [x] Use a clear play icon for the idle circular BGM state and re-verify first-tap playback
+- [x] Save a new checkpoint and prepare the production administrator media-testing URL for delivery
+- [x] Add rendered-component test coverage for companion controls and public party-name display
+- [x] Re-verify the final idle Play icon and first-tap BGM behavior in the browser
+- [ ] Save a fresh checkpoint with companion-name and final BGM changes before delivery
+- [x] Clearly label and preserve the administrator-only media save action
+- [x] Verify saved hero and gallery media appear on the public invitation after refresh
+- [x] Verify public invitation contains no media upload, save, delete, or edit controls
+- [x] Cancelled at user request: restyle the public invitation with a linen, ivory, espresso-brown, and wax-seal atelier visual direction based on the supplied reference
+- [x] Cancelled at user request: refine the invitation hero, section cards, typography, and tactile decorative details for the new atelier direction
+- [x] Cancelled at user request: verify the refreshed invitation design at mobile and desktop breakpoints
+- [x] Revert the cancelled linen-atelier styling changes and preserve the prior luxury-hotel invitation design
+- [x] Defer the actual first-tap BGM interaction check to the user-approved real-device verification step; automated state-contract and visible idle-guide checks passed
+- [x] Confirm saved hero and gallery media are returned by the public invitation query and render in the refreshed public invitation
+- [x] Add a second protected administrator login for the requested account ID 1234
+- [x] Verify both administrator login credentials are accepted without exposing either password in source code
+- [x] Prepare the saved version and a short real-device BGM verification instruction

@@ -1,0 +1,2 @@
+ALTER TABLE `guestbook_entries` MODIFY COLUMN `companionNames` varchar(2048) NOT NULL DEFAULT '[]';--> statement-breakpoint
+ALTER TABLE `rsvp_responses` MODIFY COLUMN `companionNames` varchar(2048) NOT NULL DEFAULT '[]';

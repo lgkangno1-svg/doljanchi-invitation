@@ -9,10 +9,13 @@ const SESSION_SECONDS = 60 * 60 * 24 * 7;
 function secretKey() { return new TextEncoder().encode(ENV.cookieSecret); }
 
 export function verifyAdministratorCredentials(username: string, password: string) {
-  const expectedUsername = "tnfwod";
-  const expectedPassword = ENV.adminDashboardPassword;
-  if (!expectedPassword || username !== expectedUsername) return false;
-  const submitted = Buffer.from(password); const expected = Buffer.from(expectedPassword);
+  const accounts = [
+    { username: "tnfwod", password: ENV.adminDashboardPassword },
+    { username: "1234", password: ENV.secondaryAdminDashboardPassword },
+  ];
+  const account = accounts.find(candidate => candidate.username === username);
+  if (!account?.password) return false;
+  const submitted = Buffer.from(password); const expected = Buffer.from(account.password);
   return submitted.length === expected.length && crypto.timingSafeEqual(submitted, expected);
 }
 

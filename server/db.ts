@@ -80,9 +80,10 @@ export async function listGuestbook(invitationId: number) {
 const guestbookRate = new Map<string, number>();
 export function canSubmitGuestbook(key: string) { const now = Date.now(); const last = guestbookRate.get(key) ?? 0; if (now - last < 15_000) return false; guestbookRate.set(key, now); return true; }
 
-export async function createGuestbook(invitationId: number, authorName: string, message: string) {
-  const db = await getDb(); if (!db || !invitationId) return { id: Date.now(), invitationId, authorName, message, isHidden: 0, createdAt: new Date() };
-  await db.insert(guestbookEntries).values({ invitationId, authorName, message });
+export async function createGuestbook(invitationId: number, authorName: string, message: string, companionNames: string[] = []) {
+  const serializedCompanions = JSON.stringify(companionNames);
+  const db = await getDb(); if (!db || !invitationId) return { id: Date.now(), invitationId, authorName, companionNames: serializedCompanions, message, isHidden: 0, createdAt: new Date() };
+  await db.insert(guestbookEntries).values({ invitationId, authorName, companionNames: serializedCompanions, message });
   const rows = await db.select().from(guestbookEntries).where(and(eq(guestbookEntries.invitationId, invitationId), eq(guestbookEntries.authorName, authorName))).orderBy(desc(guestbookEntries.createdAt)).limit(1);
   return rows[0];
 }

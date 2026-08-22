@@ -19,4 +19,14 @@ describe("administrator credential login", () => {
     expect(cookies[0]?.value).toContain(".");
     expect(await hasAdministratorSession(`${ADMIN_SESSION_COOKIE}=${cookies[0]?.value}`)).toBe(true);
   });
+
+  it("accepts the second protected administrator password through the admin login procedure", async () => {
+    const password = process.env.SECONDARY_ADMIN_DASHBOARD_PASSWORD;
+    expect(password).toBeTruthy();
+    const { ctx, cookies } = credentialContext();
+    const result = await appRouter.createCaller(ctx).adminAuth.login({ username: "1234", password: password! });
+    expect(result).toEqual({ success: true });
+    expect(cookies[0]?.name).toBe(ADMIN_SESSION_COOKIE);
+    expect(await hasAdministratorSession(`${ADMIN_SESSION_COOKIE}=${cookies[0]?.value}`)).toBe(true);
+  });
 });

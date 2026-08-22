@@ -2,12 +2,13 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("./db", () => ({
   getOrCreateInvitation: vi.fn(async () => ({ id: 1, slug: "invite-peach-ribbon", babyName: "서아", invitationTitle: "초대", greeting: "인사", eventDate: "2026. 10. 17 SAT", eventTime: "12:00 PM", venueName: "그랜드 홀", venueAddress: "주소", parkingInfo: "주차", accountInfo: "계좌", isPublished: 1 })),
-  createGuestbook: vi.fn(async (_id: number, name: string, message: string) => ({ id: 1, authorName: name, message })),
+  createGuestbook: vi.fn(async (_id: number, name: string, message: string, companionNames: string[] = []) => ({ id: 1, authorName: name, companionNames: JSON.stringify(companionNames), message })),
   createRsvp: vi.fn(async (data: any) => ({ ...data, id: 1, editToken: "token" })), canSubmitGuestbook: vi.fn(() => true),
   listGuestbook: vi.fn(async () => []), listAllGuestbook: vi.fn(async () => []), listRsvp: vi.fn(async () => []),
-  updateInvitation: vi.fn(), updateGuestbookVisibility: vi.fn(), deleteGuestbook: vi.fn(),
+  updateInvitation: vi.fn(), updateInvitationMedia: vi.fn(async () => ({ id: 1 })), updateGuestbookVisibility: vi.fn(), deleteGuestbook: vi.fn(),
 }));
 import { appRouter } from "./routers";
+import { updateInvitationMedia } from "./db";
 import type { TrpcContext } from "./_core/context";
 import { copyText } from "../client/src/lib/copy";
 import { buildVenueLinks } from "../client/src/lib/venue-links";
@@ -28,6 +29,13 @@ describe("invitation interactions", () => {
     const result = await caller.invitation.addRsvp({ name: "홍길동", attendance: "attending", adults: 1, children: 0, meal: true, note: "축하해요" });
     expect(result.name).toBe("홍길동");
     expect(result.contact).toBeNull();
+  });
+  it("stores companion names with RSVP and guestbook submissions", async () => {
+    const caller = appRouter.createCaller(context());
+    const guestbook = await caller.invitation.addGuestbook({ name: "김하늘", companionNames: ["박바다"], message: "축하합니다", website: "" });
+    const rsvp = await caller.invitation.addRsvp({ name: "김하늘", companionNames: ["박바다", "김별"], attendance: "attending", adults: 2, children: 1, meal: true });
+    expect(guestbook.companionNames).toBe(JSON.stringify(["박바다"]));
+    expect(rsvp.companionNames).toBe(JSON.stringify(["박바다", "김별"]));
   });
   it("is SSR-safe when clipboard is unavailable", async () => {
     expect(await copyText("sample")).toBe(false);
@@ -50,5 +58,12 @@ describe("invitation interactions", () => {
   it("blocks non-admin dashboard access", async () => {
     const caller = appRouter.createCaller(context("user"));
     await expect(caller.admin.dashboard()).rejects.toThrow();
+  });
+  it("saves administrator-selected hero and gallery media to invitation content", async () => {
+    const caller = appRouter.createCaller(context("admin"));
+    const hero = { url: "/manus-storage/invitations/hero.png", kind: "image" as const, mimeType: "image/png", fileName: "hero.png" };
+    const gallery = [{ url: "/manus-storage/invitations/gallery.mp4", kind: "video" as const, mimeType: "video/mp4", fileName: "gallery.mp4" }];
+    await caller.admin.saveMedia({ hero, gallery });
+    expect(updateInvitationMedia).toHaveBeenCalledWith(JSON.stringify(hero), JSON.stringify(gallery));
   });
 });
