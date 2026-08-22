@@ -43,8 +43,20 @@ const defaultInvitation = {
   venueName: "코트야드 메리어트 서울 명동\n3층 한양 1+2홀",
   venueAddress: "서울특별시 중구 남대문로 9",
   parkingInfo: "호텔 지하 주차장을 이용하실 수 있습니다. 행사 당일 주차 등록 및 세부 안내는 호텔 데스크에서 확인해 주세요.",
-  heroImageUrl: null,
-  galleryImageUrls: null,
+  heroImageUrl: JSON.stringify({
+    url: "/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png",
+    kind: "image",
+    mimeType: "image/png",
+    fileName: "chaewon-hotel-hero.png"
+  }),
+  galleryImageUrls: JSON.stringify([
+    {
+      url: "/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png",
+      kind: "image",
+      mimeType: "image/png",
+      fileName: "chaewon-hotel-hero.png"
+    }
+  ]),
   accountInfo: "강호성 | 카카오뱅크 3333-19-8058955",
   isPublished: 1,
 };
