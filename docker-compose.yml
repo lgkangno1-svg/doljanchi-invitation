@@ -12,6 +12,7 @@ services:
     networks:
       - default
       - avocadoss_db_net
+      - n8n_net
 
 volumes:
   media_data:
@@ -21,3 +22,6 @@ networks:
   avocadoss_db_net:
     external: true
     name: avocadoss-wordpress_wp_network
+  n8n_net:
+    external: true
+    name: n8n-server_n8n_net
