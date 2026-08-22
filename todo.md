@@ -168,3 +168,12 @@
 - [x] Apply the same two-line venue formatting to the hero venue text
 - [x] Verify the authenticated administrator dashboard returns the saved two-line venue value
 - [x] Add regression coverage for every public venue display and all four hotel-only map targets
+- [x] Preserve the existing top cake hero image without replacement
+- [x] Upload the five user-provided Chaewon photos as managed web assets
+- [x] Save the uploaded photos in a curated editorial gallery order
+- [x] Refine gallery crop and layout treatment for the supplied portrait, blossom, newborn-detail, and family-hand photos
+- [x] Verify public rendering, mobile composition, and persisted hero/gallery media references
+- [x] Verify each of the five uploaded photos renders in its intended public gallery slot on mobile
+- [x] Verify the public invitation payload preserves the exact five gallery URLs and their curated order
+- [x] Add a rendered public-gallery test that verifies the five photo URLs bind to their intended slots in order
+- [x] Assert each uploaded photo URL is rendered inside its exact intended public gallery slot
