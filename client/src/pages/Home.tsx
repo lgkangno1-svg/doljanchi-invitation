@@ -153,14 +153,10 @@ export default function Home() {
 
     <Section label="INVITATION" className="invitation-letter"><div className="monogram"><b>CW</b><small>ONE</small></div><h2>사랑을 담아<br /><em>초대합니다</em></h2><p>{invite.greeting}</p><div className="parents">아빠 <b>{invite.fatherName}</b><i /> 엄마 <b>{invite.motherName}</b></div></Section>
 
-<<<<<<< HEAD
     <Section label="A YEAR OF JOY" className="editorial-gallery"><h2>한 해 동안 피어난<br /><em>우리의 기쁨</em></h2><div className="gallery-editorial"><InvitationMediaView className="gallery-portrait" media={galleryMedia[0] ?? null} fallback={HERO_IMAGE} alt="흰 레이스 의상을 입은 채원이" /><div className="gallery-side-story"><p>채원이와 함께한<br />가장 따스한 계절</p></div></div></Section>
 
     <section className="love-transition"><InvitationMediaView className="seasonal-transition-media" media={galleryMedia[1] ?? null} fallback={HERO_IMAGE} alt="벚꽃 아래 환하게 웃는 채원이" /><div><p>A year of love,</p><strong>a lifetime of joy.</strong></div></section>
     {galleryMedia.slice(2).length > 0 && <section className="memory-strip"><div className="extra-gallery">{galleryMedia.slice(2).map((media, index) => <InvitationMediaView className={index === 0 ? "gallery-blossom-close" : "gallery-blossom"} key={`${media.url}-${index}`} media={media} fallback={HERO_IMAGE} alt={index === 0 ? "벚꽃 아래 환하게 웃는 채원이" : "벚꽃 아래의 채원이"} />)}</div></section>}
-=======
-    <section className="love-transition"><img src={HERO_IMAGE} alt="채원이의 첫돌을 위한 축하 테이블" /><div><p>A year of love,</p><strong>a lifetime of joy.</strong></div></section>
->>>>>>> 503bfee (remove tmap and kakao navi buttons)
 
     <Section label="DATE & VENUE" className="venue-section"><div className="date-venue-card"><div className="date-block"><p>DATE & TIME</p><h2>2026. 10. 18</h2><span>일요일 낮 12시 00분</span><div className="calendar-row"><b>OCT</b><i>18</i><span>SUN</span></div></div><div className="venue-divider" /><div className="venue-block"><p>VENUE</p><h3>{formatVenueDisplay(invite.venueName)}</h3><span>{invite.venueAddress}</span><VenueMap /><div className="map-actions"><a href={venueLinks.naver} target="_blank" rel="noreferrer">네이버지도</a><a href={venueLinks.kakaoMap} target="_blank" rel="noreferrer">카카오맵</a></div><div className="parking-note"><MapPin size={16} /><p><b>주차 안내</b>{invite.parkingInfo}</p></div></div></div></Section>
 
