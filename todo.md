@@ -97,7 +97,7 @@
 - [x] Save a new checkpoint and prepare the production administrator media-testing URL for delivery
 - [x] Add rendered-component test coverage for companion controls and public party-name display
 - [x] Re-verify the final idle Play icon and first-tap BGM behavior in the browser
-- [ ] Save a fresh checkpoint with companion-name and final BGM changes before delivery
+- [x] Save a fresh checkpoint with companion-name and final BGM changes before delivery
 - [x] Clearly label and preserve the administrator-only media save action
 - [x] Verify saved hero and gallery media appear on the public invitation after refresh
 - [x] Verify public invitation contains no media upload, save, delete, or edit controls
