@@ -182,3 +182,7 @@
 - [x] Replace the final three gallery images with the user-specified 3rd, 4th, and 5th blossom photos
 - [x] Use face-preserving layouts so the baby’s face remains fully visible in all three replacement photos
 - [x] Verify the revised gallery order, mobile rendering, and preserved cake hero media
+- [x] Create a brighter natural-color enhancement from the user-designated lace portrait source photo
+- [x] Replace the first public gallery image with the new brighter enhancement
+- [x] Remove the visible empty frame area around the first gallery photo with an editorial photo treatment
+- [x] Verify the updated first gallery image on mobile while preserving the cake hero

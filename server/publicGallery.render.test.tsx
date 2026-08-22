@@ -4,7 +4,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 const gallery = [
-  { url: "/manus-storage/chaewon-lace-portrait-enhanced_d7bb26ce.png", kind: "image" as const, mimeType: "image/png", fileName: "chaewon-lace-portrait-enhanced.png" },
+  { url: "/manus-storage/chaewon-lace-portrait-bright-editorial_4a3ad07f.png", kind: "image" as const, mimeType: "image/png", fileName: "chaewon-lace-portrait-bright-editorial.png" },
   { url: "/manus-storage/chaewon-blossom-smile_5fda8c96.webp", kind: "image" as const, mimeType: "image/webp", fileName: "chaewon-blossom-smile.webp" },
   { url: "/manus-storage/chaewon-blossom-smile-close_91503bc2.webp", kind: "image" as const, mimeType: "image/webp", fileName: "chaewon-blossom-smile-close.webp" },
   { url: "/manus-storage/chaewon-blossom-knit_72c5ef3a.webp", kind: "image" as const, mimeType: "image/webp", fileName: "chaewon-blossom-knit.webp" },
