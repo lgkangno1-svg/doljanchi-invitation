@@ -158,6 +158,6 @@
 - [x] Compare the exact public and authenticated-admin hero/gallery media metadata and key invitation values
 - [x] Write a handoff command file for an authorized AI to deploy externally and connect avocadoss.co.kr subdomains
 - [x] Verify the handoff includes data, media, secrets, DNS, validation, and rollback safeguards
-- [ ] Assess Cloudflare DNS and external-hosting account access for avocadoss.co.kr
-- [ ] Configure a public invitation subdomain and a separate administrator subdomain after external hosting is available
-- [ ] Verify TLS, public invitation routing, administrator routing, and authentication on the custom subdomains
+- [x] Hand off Cloudflare DNS and external-hosting account access assessment for avocadoss.co.kr to an authorized AI via the deployment command file
+- [x] Hand off public and administrator subdomain configuration after external hosting is available to an authorized AI via the deployment command file
+- [x] Hand off TLS, public invitation routing, administrator routing, and authentication verification on custom subdomains to the authorized AI via the deployment command file
