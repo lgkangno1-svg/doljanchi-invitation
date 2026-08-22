@@ -4,8 +4,20 @@ services:
     container_name: doljanchi-invitation
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3001:3000"
     env_file:
       - .env
-    environment:
-      NODE_ENV: production
+    volumes:
+      - media_data:/app/media
+    networks:
+      - default
+      - avocadoss_db_net
+
+volumes:
+  media_data:
+
+networks:
+  default:
+  avocadoss_db_net:
+    external: true
+    name: avocadoss-wordpress_wp_network
