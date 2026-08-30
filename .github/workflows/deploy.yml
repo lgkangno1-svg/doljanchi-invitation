@@ -1,4 +1,4 @@
-name: Deploy to Mini PC
+name: Validate and Deploy Invitation
 
 on:
   push:
@@ -6,11 +6,11 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-minipc
+  group: deploy-invitation
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  validate-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -38,24 +38,47 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Typecheck (advisory until legacy guestbook API types are reconciled)
-        continue-on-error: true
+      - name: Typecheck
         run: pnpm check
 
-      - name: BGM regression tests
-        run: pnpm exec vitest run server/bgm.test.ts server/bgmGuide.test.ts
+      - name: Critical public invitation regressions
+        run: >-
+          pnpm exec vitest run
+          server/bgm.test.ts
+          server/bgmGuide.test.ts
+          server/publicAssets.test.ts
+          server/galleryLayout.test.ts
+          server/publicGallery.render.test.tsx
 
-      - name: Full test suite (advisory for pre-existing unrelated regressions)
+      - name: Full test suite (advisory for unrelated legacy expectations)
         continue-on-error: true
         run: pnpm test
 
+      - name: Check Mini PC deployment configuration
+        id: deploy_target
+        env:
+          MINIPC_HOST: ${{ secrets.MINIPC_HOST }}
+          MINIPC_USER: ${{ secrets.MINIPC_USER }}
+          MINIPC_SSH_KEY: ${{ secrets.MINIPC_SSH_KEY }}
+        run: |
+          if [ -n "$MINIPC_HOST" ] && [ -n "$MINIPC_USER" ] && [ -n "$MINIPC_SSH_KEY" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "✅ Mini PC deployment credentials are configured"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "⚠️ Validation passed, but Mini PC deployment credentials are not configured. Skipping Docker build/deploy."
+          fi
+
       - name: Build Docker image
+        if: steps.deploy_target.outputs.ready == 'true'
         run: docker build -t doljanchi-invitation:latest .
 
       - name: Save Docker image as tar
+        if: steps.deploy_target.outputs.ready == 'true'
         run: docker save doljanchi-invitation:latest | gzip > doljanchi-invitation.tar.gz
 
       - name: Copy image to Mini PC via SCP
+        if: steps.deploy_target.outputs.ready == 'true'
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.MINIPC_HOST }}
@@ -66,6 +89,7 @@ jobs:
           target: "~/doljanchi-invitation"
 
       - name: Deploy on Mini PC via SSH
+        if: steps.deploy_target.outputs.ready == 'true'
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.MINIPC_HOST }}
