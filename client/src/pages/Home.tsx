@@ -60,71 +60,18 @@ export default function Home() {
   const invite = inviteQuery.data ?? fallback;
   const guestbook = trpc.invitation.guestbook.useQuery({ slug }, { staleTime: 15000 });
   const [guestName, setGuestName] = useState("");
-  const [guestPassword, setGuestPassword] = useState("");
   const [guestCompanions, setGuestCompanions] = useState<string[]>([]);
   const [guestMessage, setGuestMessage] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<{ id: number; authorName: string } | null>(null);
-  const [deletePasswordInput, setDeletePasswordInput] = useState("");
-
-  const saveMyPost = (id: number, pass: string) => {
-    try {
-      const map = JSON.parse(localStorage.getItem("my_guestbook_posts") || "{}");
-      map[id] = pass;
-      localStorage.setItem("my_guestbook_posts", JSON.stringify(map));
-    } catch {}
-  };
-
-  const getMyPostPass = (id: number) => {
-    try {
-      const map = JSON.parse(localStorage.getItem("my_guestbook_posts") || "{}");
-      return map[id] || "";
-    } catch { return ""; }
-  };
 
   const addGuestbook = trpc.invitation.addGuestbook.useMutation({
-    onSuccess: (data: any) => {
-      const newId = data?.id;
-      if (newId && guestPassword.trim()) {
-        saveMyPost(newId, guestPassword.trim());
-      }
+    onSuccess: () => {
       guestbook.refetch();
       setGuestName("");
-      setGuestPassword("");
       setGuestCompanions([]);
       setGuestMessage("");
       toast.success("채원이에게 축하 메시지가 전달되었어요.");
     }
   });
-
-  const deleteGuestbook = trpc.invitation.deleteGuestbook.useMutation({
-    onSuccess: () => {
-      guestbook.refetch();
-      setDeleteTarget(null);
-      setDeletePasswordInput("");
-      toast.success("방명록이 삭제되었습니다.");
-    },
-    onError: (err: any) => {
-      toast.error(err.message || "비밀번호가 일치하지 않습니다.");
-    }
-  });
-
-  const handleDeleteRequest = (entry: { id: number; authorName: string }) => {
-    const savedPass = getMyPostPass(entry.id);
-    if (savedPass) {
-      if (window.confirm(`'${entry.authorName}' 님의 방명록을 삭제하시겠습니까?`)) {
-        deleteGuestbook.mutate({ id: entry.id, password: savedPass } as any);
-      }
-    } else {
-      setDeleteTarget(entry);
-      setDeletePasswordInput("");
-    }
-  };
-
-  const confirmDeleteWithPassword = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!deleteTarget) return;
-    deleteGuestbook.mutate({ id: deleteTarget.id, password: deletePasswordInput.trim() } as any);
-  };
 
   const addRsvp = trpc.invitation.addRsvp.useMutation({ onSuccess: () => { setRsvpSent(true); toast.success("참석 여부가 전달되었어요."); } });
   const [rsvpSent, setRsvpSent] = useState(false);
@@ -140,7 +87,7 @@ export default function Home() {
   const copy = async (value: string, label: string) => { if (await copyText(value)) toast.success(`${label} 복사 완료`); else toast.error("복사할 수 없어요. 길게 눌러 복사해 주세요."); };
   const copyAccount = async (value: string) => { const copied = await copyAccountNumber(value); if (copied) toast.success(accountCopySuccessMessage()); else toast.error("복사할 수 없어요. 길게 눌러 복사해 주세요."); return copied; };
   const share = async () => { const kakao = (window as any).Kakao; const shareImage = heroMedia?.kind === "image" ? heroMedia.url : HERO_IMAGE; if (kakao?.Share?.sendDefault) { kakao.Share.sendDefault({ objectType: "feed", content: { title: `${invite.babyName}의 첫 번째 생일`, description: invite.invitationTitle, imageUrl: `${location.origin}${shareImage}`, link: { mobileWebUrl: location.href, webUrl: location.href } } }); return; } if (navigator.share) await navigator.share({ title: `${invite.babyName}의 첫 번째 생일`, text: invite.invitationTitle, url: location.href }); else await copy(location.href, "초대장 링크"); };
-  const submitGuestbook = (event: React.FormEvent) => { event.preventDefault(); if (!guestName.trim() || !guestMessage.trim()) return toast.error("이름과 축하 메시지를 모두 입력해 주세요."); addGuestbook.mutate({ name: guestName.trim(), companionNames: normalizeCompanionNames(guestCompanions), message: guestMessage.trim(), password: guestPassword.trim(), website: "" } as any); };
+  const submitGuestbook = (event: React.FormEvent) => { event.preventDefault(); if (!guestName.trim() || !guestMessage.trim()) return toast.error("이름과 축하 메시지를 모두 입력해 주세요."); addGuestbook.mutate({ name: guestName.trim(), companionNames: normalizeCompanionNames(guestCompanions), message: guestMessage.trim(), website: "" }); };
   const submitRsvp = (event: React.FormEvent) => { event.preventDefault(); const summary = summarizeRsvpAttendees(rsvp.attendees); if (!summary.primaryName) return toast.error("참석하시는 분의 성함을 한 분 이상 입력해 주세요."); addRsvp.mutate({ name: summary.primaryName, companionNames: summary.companionNames, attendeeDetails: summary.attendees, attendance: rsvp.attendance, adults: summary.adults, children: summary.children, contact: rsvp.contact, note: rsvp.note }); };
   const toggleMusic = async () => { const audio = audioRef.current; if (!audio) return; if (audio.paused) { try { const next = await startBgmOnTap(audio); setMusicPlaying(next.isPlaying); setHasStartedMusic(next.hasStartedMusic); } catch { toast.error("음악을 재생할 수 없어요."); } } else { audio.pause(); setMusicPlaying(false); } };
 
@@ -160,7 +107,6 @@ export default function Home() {
       <div className="gallery-editorial">
         <InvitationMediaView className="gallery-portrait" media={galleryMedia[0]} fallback={HERO_IMAGE} alt="채원이의 첫 해를 담은 사진" />
         <div className="gallery-side-story">
-          {galleryMedia[1] && <InvitationMediaView media={galleryMedia[1]} fallback={HERO_IMAGE} alt="채원이의 소중한 순간" />}
           <p>작은 손과 발, 매일 새로워지는 표정까지.<br />채원이의 첫 해를 함께 기억해 주세요.</p>
         </div>
       </div>
@@ -184,15 +130,9 @@ export default function Home() {
     <Section label="GUESTBOOK" className="guestbook-hotel">
       <h2>채원이에게<br /><em>축하 메시지를 남겨주세요</em></h2>
       <form className="guestbook-form" onSubmit={submitGuestbook}>
-        <div className="guestbook-row">
-          <div className="guestbook-field">
-            <label className="guestbook-label"><span>대표 이름</span></label>
-            <input value={guestName} onChange={event => setGuestName(event.target.value)} maxLength={40} placeholder="성함을 입력해 주세요" />
-          </div>
-          <div className="guestbook-field">
-            <label className="guestbook-label"><span>비밀번호</span><small>(삭제 시 필요)</small></label>
-            <input type="password" value={guestPassword} onChange={event => setGuestPassword(event.target.value)} maxLength={12} placeholder="4자리 숫자 권장" />
-          </div>
+        <div className="guestbook-field">
+          <label className="guestbook-label"><span>대표 이름</span></label>
+          <input value={guestName} onChange={event => setGuestName(event.target.value)} maxLength={40} placeholder="성함을 입력해 주세요" />
         </div>
 
         <div className="guestbook-companion-wrap">
@@ -209,7 +149,7 @@ export default function Home() {
           <button className="hotel-primary" disabled={addGuestbook.isPending}><MessageCircle size={15} /> 축하 메시지 남기기</button>
         </div>
 
-        <p className="form-privacy light">작성하신 이름과 메시지는 초대장에 공개되며, 설정하신 비밀번호로 언제든 삭제하실 수 있습니다.</p>
+        <p className="form-privacy light">작성하신 이름과 메시지는 초대장에 공개됩니다.</p>
       </form>
 
       <div className="message-list">
@@ -218,37 +158,18 @@ export default function Home() {
             <p>{entry.message}</p>
             <footer>
               <span>{new Date(entry.createdAt).toLocaleDateString("ko-KR")}</span>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <b><PartyNameLabel primaryName={entry.authorName} companionNames={entry.companionNames} /></b>
-                <button type="button" style={{ border: "1px solid #c9a38055", background: "transparent", color: "#a48e7f", fontSize: "11px", padding: "2px 7px", borderRadius: "2px", cursor: "pointer" }} onClick={() => handleDeleteRequest(entry)}>삭제</button>
-              </div>
+              <b><PartyNameLabel primaryName={entry.authorName} companionNames={entry.companionNames} /></b>
             </footer>
           </article>
         ))}
         {(guestbook.data?.length ?? 0) === 0 && <p className="message-more">첫 번째 축하 메시지를 남겨주세요.</p>}
       </div>
-
-      {deleteTarget && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(20, 13, 10, 0.75)", backdropFilter: "blur(4px)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-          <div style={{ background: "#fffdfa", border: "1px solid #d4be88", padding: "28px 24px", maxWidth: "360px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.3)", color: "#382319", textAlign: "center" }}>
-            <h3 style={{ margin: "0 0 10px", fontFamily: "'Noto Serif KR', serif", fontSize: "18px" }}>방명록 삭제</h3>
-            <p style={{ fontSize: "13px", color: "#776356", margin: "0 0 20px", lineHeight: "1.6" }}><b>{deleteTarget.authorName}</b> 님이 작성하신 방명록을 삭제하시려면 작성 시 설정하신 비밀번호를 입력해 주세요.</p>
-            <form onSubmit={confirmDeleteWithPassword} style={{ display: "grid", gap: "14px" }}>
-              <input type="password" placeholder="비밀번호 입력" value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} autoFocus style={{ width: "100%", minHeight: "44px", padding: "10px 12px", border: "1px solid #b8987b", background: "#fff", fontSize: "15px", textAlign: "center" }} />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                <button type="button" style={{ padding: "11px", border: "1px solid #d2bba0", background: "#f4ede4", color: "#5b4a3f", fontSize: "13px", cursor: "pointer" }} onClick={() => setDeleteTarget(null)}>취소</button>
-                <button type="submit" disabled={deleteGuestbook.isPending} style={{ padding: "11px", border: "1px solid #a83d33", background: "#b84236", color: "#fff", fontSize: "13px", cursor: "pointer" }}>{deleteGuestbook.isPending ? "삭제 중…" : "삭제하기"}</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </Section>
 
     <AccountSection accounts={accounts} copyAccount={copyAccount} />
 
     <section className="hotel-closing"><div className="closing-ribbon">⌇</div><p>채원이의 첫 번째 생일을<br /><em>함께 축하해 주셔서 감사합니다.</em></p></section>
     <div className="music-control">{!hasStartedMusic && !musicPlaying && <BgmGuide onActivate={async () => { await toggleMusic(); }} />}<button aria-label={musicPlaying ? "배경음악 일시정지" : "배경음악 재생"} onClick={toggleMusic}>{musicPlaying ? <Pause size={20} /> : <Play size={20} />}<span>BGM</span></button></div>
-    <nav className="share-bar"><button onClick={share}><Share2 size={16} /> 카카오톡 공유</button><button onClick={() => copy(location.href, "초대장 링크")}><Copy size={16} /> 링크 복사</button></nav>
+    <nav className="share-bar"><button onClick={share}><Share2 size={16} /> 공유</button><button onClick={() => copy(location.href, "초대장 링크")}><Copy size={16} /> 링크 복사</button></nav>
   </main>;
 }
