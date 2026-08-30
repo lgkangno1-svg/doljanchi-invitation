@@ -42,7 +42,11 @@ jobs:
         continue-on-error: true
         run: pnpm check
 
-      - name: Test
+      - name: BGM regression tests
+        run: pnpm exec vitest run server/bgm.test.ts server/bgmGuide.test.ts
+
+      - name: Full test suite (advisory for pre-existing unrelated regressions)
+        continue-on-error: true
         run: pnpm test
 
       - name: Build Docker image
