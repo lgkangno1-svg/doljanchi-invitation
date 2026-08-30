@@ -1,0 +1,10 @@
+node_modules
+.git
+.github
+*.tar
+*.tar.gz
+coverage
+.vite
+.DS_Store
+npm-debug.log*
+pnpm-debug.log*
