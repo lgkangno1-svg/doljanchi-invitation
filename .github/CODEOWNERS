@@ -1,0 +1,12 @@
+# Owner review is required for all repository changes when branch protection is enabled.
+* @lgkangno1-svg
+
+# Explicit production invitation ownership.
+/client/src/pages/Home.tsx @lgkangno1-svg
+/client/src/index.css @lgkangno1-svg
+/client/src/components/ @lgkangno1-svg
+/client/src/lib/ @lgkangno1-svg
+/client/public/manus-storage/ @lgkangno1-svg
+/.github/workflows/deploy.yml @lgkangno1-svg
+/Dockerfile @lgkangno1-svg
+/docker-compose.yml @lgkangno1-svg
