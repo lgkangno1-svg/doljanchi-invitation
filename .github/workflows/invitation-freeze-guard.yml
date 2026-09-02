@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 env:
-  FROZEN_INVITATION_SHA: fb901585f065adbe70210c45a7449c5aaa600a9a
+  FROZEN_INVITATION_SHA: fa2cb01c456536715826b0424c3026dfb2ff3166
 
 jobs:
   protect-live-invitation:
@@ -50,24 +50,28 @@ jobs:
           fi
 
           # Mini PC deployment must stay pinned, restore the original cake blob explicitly,
-          # and use the owner-approved luxury-hotel waltz instead of the temporary lullaby.
-          grep -F 'FROZEN_SHA="fb901585f065adbe70210c45a7449c5aaa600a9a"' deploy.sh
+          # and use the owner-approved public-domain Blue Danube waltz.
+          grep -F 'FROZEN_SHA="fa2cb01c456536715826b0424c3026dfb2ff3166"' deploy.sh
           grep -F 'git archive "$FROZEN_SHA"' deploy.sh
           grep -F 'git show "$FROZEN_SHA:$HERO_REL"' deploy.sh
-          grep -F 'BGM_URL="https://commons.wikimedia.org/wiki/Special:Redirect/file/Waltz_Op._69_no._1_in_A_flat_major.mp3"' deploy.sh
-          grep -F 'Cake hero and BGM are publicly reachable' deploy.sh
+          grep -F 'Strauss%2C_An_der_sch%C3%B6nen_blauen_Donau' deploy.sh
+          grep -F 'Cake hero and Blue Danube BGM are publicly reachable' deploy.sh
           if grep -F 'git pull origin main' deploy.sh; then
             echo "::error::deploy.sh must never deploy mutable main."
             exit 1
           fi
 
           # GitHub deployment must stay manual-only and pinned to the same exact SHA.
-          grep -F 'FROZEN_INVITATION_SHA: fb901585f065adbe70210c45a7449c5aaa600a9a' .github/workflows/deploy.yml
-          grep -F 'Waltz_Op._69_no._1_in_A_flat_major.mp3' .github/workflows/deploy.yml
+          grep -F 'FROZEN_INVITATION_SHA: fa2cb01c456536715826b0424c3026dfb2ff3166' .github/workflows/deploy.yml
+          grep -F 'Strauss%2C_An_der_sch%C3%B6nen_blauen_Donau' .github/workflows/deploy.yml
           grep -F 'workflow_dispatch:' .github/workflows/deploy.yml
           if grep -Eq '^[[:space:]]+push:' .github/workflows/deploy.yml; then
             echo "::error::Automatic push deployment is forbidden for the frozen invitation."
             exit 1
           fi
 
-          echo "✅ Live invitation remains frozen with the original cake hero and approved hotel-waltz deployment path."
+          # The frozen runtime itself must retain the nested media-path fix and waltz fallback.
+          grep -F 'path.resolve(import.meta.dirname, "public/manus-storage", normalizedKey)' server/_core/storageProxy.ts
+          grep -F 'Strauss%2C_An_der_sch%C3%B6nen_blauen_Donau' client/src/pages/Home.tsx
+
+          echo "✅ Live invitation remains frozen with nested cake media routing and the Blue Danube hotel-waltz BGM."
