@@ -27,8 +27,6 @@ jobs:
           set -euo pipefail
           git cat-file -e "$FROZEN_INVITATION_SHA^{commit}"
 
-          # Runtime and frozen deployment source must remain byte-for-byte identical
-          # to the owner-approved production revision.
           protected_paths=(
             client
             server
@@ -51,10 +49,13 @@ jobs:
             exit 1
           fi
 
-          # Mini PC local deployment must build from the frozen SHA, never mutable main.
+          # Mini PC deployment must stay pinned, restore the original cake blob explicitly,
+          # and use the owner-approved luxury-hotel waltz instead of the temporary lullaby.
           grep -F 'FROZEN_SHA="fb901585f065adbe70210c45a7449c5aaa600a9a"' deploy.sh
           grep -F 'git archive "$FROZEN_SHA"' deploy.sh
-          grep -F 'BGM_URL="https://cdn.pixabay.com/' deploy.sh
+          grep -F 'git show "$FROZEN_SHA:$HERO_REL"' deploy.sh
+          grep -F 'BGM_URL="https://commons.wikimedia.org/wiki/Special:Redirect/file/Waltz_Op._69_no._1_in_A_flat_major.mp3"' deploy.sh
+          grep -F 'Cake hero and BGM are publicly reachable' deploy.sh
           if grep -F 'git pull origin main' deploy.sh; then
             echo "::error::deploy.sh must never deploy mutable main."
             exit 1
@@ -62,10 +63,11 @@ jobs:
 
           # GitHub deployment must stay manual-only and pinned to the same exact SHA.
           grep -F 'FROZEN_INVITATION_SHA: fb901585f065adbe70210c45a7449c5aaa600a9a' .github/workflows/deploy.yml
+          grep -F 'Waltz_Op._69_no._1_in_A_flat_major.mp3' .github/workflows/deploy.yml
           grep -F 'workflow_dispatch:' .github/workflows/deploy.yml
           if grep -Eq '^[[:space:]]+push:' .github/workflows/deploy.yml; then
             echo "::error::Automatic push deployment is forbidden for the frozen invitation."
             exit 1
           fi
 
-          echo "✅ Live invitation runtime and both deployment paths are frozen to the owner-approved revision."
+          echo "✅ Live invitation remains frozen with the original cake hero and approved hotel-waltz deployment path."
