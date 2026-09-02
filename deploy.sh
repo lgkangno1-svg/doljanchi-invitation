@@ -8,7 +8,7 @@ REPO_DIR="$HOME/doljanchi-invitation"
 LOG_FILE="$REPO_DIR/deploy.log"
 IMAGE_NAME="doljanchi-invitation"
 PROJECT_NAME="doljanchi-invitation"
-FROZEN_SHA="fa2cb01c456536715826b0424c3026dfb2ff3166"
+FROZEN_SHA="e1a25f6647d0d86de12808ecdfba07b2572a184a"
 BUILD_DIR="$REPO_DIR/.frozen-production-build"
 HERO_REL="client/public/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png"
 BGM_REL="client/public/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3"
@@ -77,13 +77,13 @@ log "🔄 Restarting frozen production container..."
 docker compose -p "$PROJECT_NAME" -f "$BUILD_DIR/docker-compose.yml" down
 docker compose -p "$PROJECT_NAME" -f "$BUILD_DIR/docker-compose.yml" up -d
 
-# Verify the exact public URLs before declaring success. The server now preserves the
-# full nested /manus-storage path instead of dropping invitations/1/ to basename only.
+# Verify the exact public URLs before declaring success. The server preserves the full
+# nested /manus-storage path, and the client uses cache-busting query strings for mobile.
 log "🌐 Verifying live static assets..."
 for attempt in 1 2 3 4 5 6 7 8; do
-  if curl -fsS --max-time 5 "http://127.0.0.1:3001/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png" >/dev/null \
-    && curl -fsS --max-time 5 "http://127.0.0.1:3001/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3" >/dev/null; then
-    log "✅ Cake hero and Blue Danube BGM are publicly reachable"
+  if curl -fsS --max-time 5 "http://127.0.0.1:3001/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png?v=20260903-mobile-hero-2" >/dev/null \
+    && curl -fsS --max-time 5 "http://127.0.0.1:3001/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3?v=20260903-blue-danube-2" >/dev/null; then
+    log "✅ Mobile cake hero and Blue Danube BGM are publicly reachable"
     break
   fi
   if [ "$attempt" -eq 8 ]; then
