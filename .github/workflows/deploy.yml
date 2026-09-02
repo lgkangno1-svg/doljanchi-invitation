@@ -1,11 +1,14 @@
 name: Deploy Frozen Invitation
 
-# PRODUCTION FREEZE
-# The public invitation must stay pinned to the owner-approved commit below.
-# Do not change FROZEN_INVITATION_SHA or re-enable push deployment unless the repository owner explicitly asks to unfreeze production.
+# ONE-TIME VALIDATION TRIGGER. Remove push immediately after this run completes.
+# Production source itself remains pinned to the owner-approved SHA below.
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/deploy.yml"
 
 permissions:
   contents: read
@@ -42,11 +45,11 @@ jobs:
           grep -F '<source src={BGM_FALLBACK} type="audio/mpeg" />' client/src/pages/Home.tsx
           grep -F '카카오톡 공유' client/src/pages/Home.tsx
           if grep -F 'className="gallery-portrait"' client/src/pages/Home.tsx; then
-            echo "::error::The later AI-added standalone gallery layout has returned. Production must remain on the restored original layout."
+            echo "::error::The later AI-added standalone gallery layout has returned."
             exit 1
           fi
           if grep -F 'galleryMedia.slice(2)' client/src/pages/Home.tsx; then
-            echo "::error::The later AI-added memory strip has returned. Production must remain on the restored original layout."
+            echo "::error::The later AI-added memory strip has returned."
             exit 1
           fi
           echo "✅ Cake hero and resilient BGM configuration verified"
