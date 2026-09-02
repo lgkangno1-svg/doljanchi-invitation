@@ -8,7 +8,7 @@ REPO_DIR="$HOME/doljanchi-invitation"
 LOG_FILE="$REPO_DIR/deploy.log"
 IMAGE_NAME="doljanchi-invitation"
 PROJECT_NAME="doljanchi-invitation"
-FROZEN_SHA="add90ee0b38efcb85fea50f5b6292a2bda9cfc6a"
+FROZEN_SHA="fb901585f065adbe70210c45a7449c5aaa600a9a"
 BUILD_DIR="$REPO_DIR/.frozen-production-build"
 BGM_URL="https://cdn.pixabay.com/download/audio/2024/02/27/audio_f76c4a5d60.mp3?filename=lorenzobuczek-breton-lullaby-berceuse-bretonne-193499.mp3"
 
@@ -36,7 +36,8 @@ rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 git archive "$FROZEN_SHA" | tar -x -C "$BUILD_DIR"
 
-# The BGM is intentionally restored at deploy time and is not sourced from mutable main.
+# Restore the local BGM into the exact build context. The app also carries a remote
+# source fallback so playback can recover even if this download is unavailable later.
 mkdir -p "$BUILD_DIR/client/public/manus-storage"
 curl -fL --retry 3 --retry-delay 2 --connect-timeout 15 \
   "$BGM_URL" \
