@@ -11,17 +11,31 @@ export function registerStorageProxy(app: Express) {
       return;
     }
 
-    const fileName = path.basename(key);
-    // Check local static bundled media
+    // Preserve nested storage paths such as invitations/1/hero.png. The previous
+    // basename-only lookup dropped the directory portion, so bundled hero images
+    // existed inside dist/public but every /manus-storage/invitations/... request
+    // still returned 404 before Express static serving could see it.
+    const normalizedKey = key.replace(/\\/g, "/");
+    const segments = normalizedKey.split("/");
+    if (
+      normalizedKey.startsWith("/") ||
+      segments.some(segment => !segment || segment === "." || segment === "..")
+    ) {
+      res.status(400).send("Invalid storage key");
+      return;
+    }
+
+    // Check local static bundled media first. The first path is used by the
+    // production esbuild bundle (/app/dist/index.js + /app/dist/public/*).
+    // The second path keeps local development working from server/_core.
     const candidatePaths = [
-      path.resolve(import.meta.dirname, "../../client/public/manus-storage", fileName),
-      path.resolve(import.meta.dirname, "../public/manus-storage", fileName),
-      path.resolve(import.meta.dirname, "public/manus-storage", fileName),
+      path.resolve(import.meta.dirname, "public/manus-storage", normalizedKey),
+      path.resolve(import.meta.dirname, "../../client/public/manus-storage", normalizedKey),
     ];
 
-    for (const p of candidatePaths) {
-      if (fs.existsSync(p)) {
-        return res.sendFile(p);
+    for (const candidatePath of candidatePaths) {
+      if (fs.existsSync(candidatePath) && fs.statSync(candidatePath).isFile()) {
+        return res.sendFile(candidatePath);
       }
     }
 
@@ -32,7 +46,7 @@ export function registerStorageProxy(app: Express) {
           "v1/storage/presign/get",
           ENV.forgeApiUrl.replace(/\/+$/, "") + "/",
         );
-        forgeUrl.searchParams.set("path", key);
+        forgeUrl.searchParams.set("path", normalizedKey);
 
         const forgeResp = await fetch(forgeUrl, {
           headers: { Authorization: `Bearer ${ENV.forgeApiKey}` },
@@ -52,7 +66,7 @@ export function registerStorageProxy(app: Express) {
 
     // Upstream fallback to original live Manus storage
     try {
-      const upstreamUrl = `https://doljanchi-t3vnch8e.manus.space/manus-storage/${key}`;
+      const upstreamUrl = `https://doljanchi-t3vnch8e.manus.space/manus-storage/${normalizedKey}`;
       const upstreamResp = await fetch(upstreamUrl);
       if (upstreamResp.ok) {
         const contentType = upstreamResp.headers.get("content-type") || "application/octet-stream";
