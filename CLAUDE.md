@@ -2,7 +2,7 @@
 
 `invite.avocadoss.co.kr` is a frozen production site.
 
-Approved production commit: `fa2cb01c456536715826b0424c3026dfb2ff3166`.
+Approved production commit: `e1a25f6647d0d86de12808ecdfba07b2572a184a`.
 
 Do not change this repository's invitation UI, media, invitation APIs/data behavior, Docker/deployment configuration, or `.github/workflows/deploy.yml` unless the owner explicitly asks to modify this exact invitation in the current task.
 
