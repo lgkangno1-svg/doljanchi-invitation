@@ -39,8 +39,8 @@ jobs:
           grep -F '<img src={HERO_IMAGE} alt="채원의 첫 번째 생일을 위한 호텔 스타일 케이크 테이블"' client/src/pages/Home.tsx
           grep -F 'className="love-transition"><img src={HERO_IMAGE}' client/src/pages/Home.tsx
           grep -F '<source src={BGM} type="audio/mpeg" />' client/src/pages/Home.tsx
-          grep -F '<source src={BGM_FALLBACK} type="audio/mpeg" />' client/src/pages/Home.tsx
           grep -F '카카오톡 공유' client/src/pages/Home.tsx
+          test -s client/public/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png
           if grep -F 'className="gallery-portrait"' client/src/pages/Home.tsx; then
             echo "::error::The later AI-added standalone gallery layout has returned. Production must remain on the restored original layout."
             exit 1
@@ -49,17 +49,17 @@ jobs:
             echo "::error::The later AI-added memory strip has returned. Production must remain on the restored original layout."
             exit 1
           fi
-          echo "✅ Cake hero and resilient BGM configuration verified"
+          echo "✅ Cake hero source and BGM hook verified"
 
-      - name: Restore invitation BGM
+      - name: Restore luxury-hotel invitation BGM
         run: |
           set -euo pipefail
           mkdir -p client/public/manus-storage
           curl -fL --retry 3 --retry-delay 2 --connect-timeout 15 \
-            "https://cdn.pixabay.com/download/audio/2024/02/27/audio_f76c4a5d60.mp3?filename=lorenzobuczek-breton-lullaby-berceuse-bretonne-193499.mp3" \
+            "https://commons.wikimedia.org/wiki/Special:Redirect/file/Waltz_Op._69_no._1_in_A_flat_major.mp3" \
             -o client/public/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3
           test -s client/public/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3
-          echo "✅ BGM restored"
+          echo "✅ Luxury-hotel BGM restored"
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -100,6 +100,12 @@ jobs:
       - name: Build Docker image
         if: steps.deploy_target.outputs.ready == 'true'
         run: docker build -t doljanchi-invitation:latest .
+
+      - name: Verify assets inside Docker image
+        if: steps.deploy_target.outputs.ready == 'true'
+        run: >-
+          docker run --rm --entrypoint sh doljanchi-invitation:latest -c
+          'test -s /app/dist/public/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png && test -s /app/dist/public/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3'
 
       - name: Save Docker image as tar
         if: steps.deploy_target.outputs.ready == 'true'
