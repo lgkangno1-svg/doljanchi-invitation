@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  FROZEN_INVITATION_SHA: fb901585f065adbe70210c45a7449c5aaa600a9a
+  FROZEN_INVITATION_SHA: fa2cb01c456536715826b0424c3026dfb2ff3166
 
 jobs:
   validate-and-deploy:
@@ -39,6 +39,9 @@ jobs:
           grep -F '<img src={HERO_IMAGE} alt="채원의 첫 번째 생일을 위한 호텔 스타일 케이크 테이블"' client/src/pages/Home.tsx
           grep -F 'className="love-transition"><img src={HERO_IMAGE}' client/src/pages/Home.tsx
           grep -F '<source src={BGM} type="audio/mpeg" />' client/src/pages/Home.tsx
+          grep -F 'Strauss%2C_An_der_sch%C3%B6nen_blauen_Donau' client/src/pages/Home.tsx
+          grep -F 'normalizedKey' server/_core/storageProxy.ts
+          grep -F 'path.resolve(import.meta.dirname, "public/manus-storage", normalizedKey)' server/_core/storageProxy.ts
           grep -F '카카오톡 공유' client/src/pages/Home.tsx
           test -s client/public/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png
           if grep -F 'className="gallery-portrait"' client/src/pages/Home.tsx; then
@@ -49,17 +52,17 @@ jobs:
             echo "::error::The later AI-added memory strip has returned. Production must remain on the restored original layout."
             exit 1
           fi
-          echo "✅ Cake hero source and BGM hook verified"
+          echo "✅ Original cake hero path, nested storage routing, and Blue Danube BGM verified"
 
-      - name: Restore luxury-hotel invitation BGM
+      - name: Restore Blue Danube invitation BGM
         run: |
           set -euo pipefail
           mkdir -p client/public/manus-storage
           curl -fL --retry 3 --retry-delay 2 --connect-timeout 15 \
-            "https://commons.wikimedia.org/wiki/Special:Redirect/file/Waltz_Op._69_no._1_in_A_flat_major.mp3" \
+            "https://upload.wikimedia.org/wikipedia/commons/transcoded/9/91/Strauss%2C_An_der_sch%C3%B6nen_blauen_Donau.ogg/Strauss%2C_An_der_sch%C3%B6nen_blauen_Donau.ogg.mp3" \
             -o client/public/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3
           test -s client/public/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3
-          echo "✅ Luxury-hotel BGM restored"
+          echo "✅ Blue Danube BGM restored"
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
