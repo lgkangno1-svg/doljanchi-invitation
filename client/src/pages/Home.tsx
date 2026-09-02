@@ -1,24 +1,23 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { copyText } from "@/lib/copy";
 import { accountCopySuccessMessage, copyAccountNumber } from "@/lib/account-copy";
 import { buildVenueLinks, VENUE_MAP_SEARCH_QUERY } from "@/lib/venue-links";
 import { formatVenueDisplay } from "@/lib/venue-display";
-import { parseMedia, type InvitationMedia } from "@/lib/invitation-media";
 import { startBgmOnTap } from "@/lib/bgm";
 import { addCompanionInput, normalizeCompanionNames, removeCompanionInput } from "@/lib/companions";
 import { createInitialRsvpAttendees, summarizeRsvpAttendees } from "@/lib/rsvp-attendees";
 import { CompanionFields, PartyNameLabel } from "@/components/CompanionFields";
 import { RsvpAttendeeFields } from "@/components/RsvpAttendeeFields";
 import { BgmGuide } from "@/components/BgmGuide";
-import { syncViewportVideo } from "@/lib/viewport-video";
 import { toast } from "sonner";
 import { Copy, MapPin, MessageCircle, Pause, Play, Share2 } from "lucide-react";
 import { AccountSection } from "@/components/AccountSection";
 
 const HERO_IMAGE = "/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png";
 const BGM = "/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3";
+const BGM_FALLBACK = "https://cdn.pixabay.com/download/audio/2024/02/27/audio_f76c4a5d60.mp3?filename=lorenzobuczek-breton-lullaby-berceuse-bretonne-193499.mp3";
 const fallback = { id: 0, babyName: "채원", fatherName: "강호성", motherName: "NGUYEN HONG NGOC", invitationTitle: "채원의 첫 번째 생일에 소중한 분들을 초대합니다.", greeting: "저희에게 찾아온 가장 빛나는 선물, 채원이가 어느덧 첫 번째 생일을 맞았습니다. 그동안 보내주신 따뜻한 사랑에 감사드리며, 소중한 분들과 함께 채원이의 첫걸음을 축복하는 자리를 마련했습니다.", eventDate: "2026. 10. 18 SUN", eventTime: "12:00 PM", venueName: "코트야드 메리어트 서울 명동\n3층 한양 1+2홀", venueAddress: "서울특별시 중구 남대문로 9", parkingInfo: "호텔 지하 주차장을 이용하실 수 있습니다. 행사 당일 주차 등록 및 세부 안내는 호텔 데스크에서 확인해 주세요.", heroImageUrl: null, galleryImageUrls: null, accountInfo: "강호성 | 카카오뱅크 3333-19-8058955" };
 
 function Section({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
@@ -26,28 +25,6 @@ function Section({ label, children, className = "" }: { label: string; children:
 }
 
 function VenueMap() { return <div className="venue-map"><iframe title="코트야드 메리어트 서울 명동 위치 지도" src={`https://maps.google.com/maps?q=${encodeURIComponent(VENUE_MAP_SEARCH_QUERY)}&t=&z=16&ie=UTF8&iwloc=&output=embed`} loading="lazy" /></div>; }
-
-function useReducedMotion() { const [reduced, setReduced] = useState(false); useEffect(() => { const query = window.matchMedia("(prefers-reduced-motion: reduce)"); const change = () => setReduced(query.matches); change(); query.addEventListener("change", change); return () => query.removeEventListener("change", change); }, []); return reduced; }
-
-function InvitationMediaView({ media, fallback, alt, className = "", priority = false }: { media: InvitationMedia | null; fallback: string; alt: string; className?: string; priority?: boolean }) {
-  const reducedMotion = useReducedMotion();
-  const source = media?.url || fallback; const [loading, setLoading] = useState(true); const [failed, setFailed] = useState(false); const videoRef = useRef<HTMLVideoElement>(null);
-  useEffect(() => { setLoading(true); setFailed(false); }, [source]);
-  useEffect(() => {
-    if (media?.kind !== "video") return;
-    const video = videoRef.current;
-    if (!video) return;
-    const sync = (visible: boolean) => { void syncViewportVideo(video, visible, reducedMotion); };
-    if (typeof IntersectionObserver === "undefined") { sync(true); return; }
-    const observer = new IntersectionObserver(entries => { const entry = entries[0]; if (entry) sync(entry.isIntersecting && entry.intersectionRatio >= 0.25); }, { threshold: [0, 0.25, 0.6] });
-    observer.observe(video);
-    return () => { observer.disconnect(); video.pause(); };
-  }, [media?.kind, source, reducedMotion]);
-  return <div className={`invitation-media ${className} ${failed ? "media-error" : ""}`} aria-busy={loading}>
-    {failed ? <><img src={fallback} alt={alt} loading={priority ? "eager" : "lazy"} /><span className="media-status">미디어를 불러오지 못해 기본 이미지로 표시합니다.</span></> : media?.kind === "video" ? <video ref={videoRef} src={source} poster={fallback} muted loop playsInline preload="metadata" aria-label={alt} onLoadedData={() => setLoading(false)} onError={() => { setLoading(false); setFailed(true); }} /> : <img src={source} alt={alt} loading={priority ? "eager" : "lazy"} onLoad={() => setLoading(false)} onError={() => { setLoading(false); setFailed(true); }} />}
-    {loading && !failed && <span className="media-status media-loading">사진을 준비하고 있어요…</span>}
-  </div>;
-}
 
 export default function Home() {
   const [, params] = useRoute("/invite/:slug");
@@ -76,19 +53,21 @@ export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [rsvp, setRsvp] = useState({ attendees: createInitialRsvpAttendees(), attendance: "attending" as "attending" | "unable", contact: "", note: "" });
   const accounts = useMemo(() => invite.accountInfo.split("\n").map(line => { const [label, ...rest] = line.split("|"); return { label: label?.trim() || "계좌", value: rest.join("|").trim() || line }; }), [invite.accountInfo]);
-  const heroMedia = parseMedia(invite.heroImageUrl);
   const venueLinks = buildVenueLinks(invite.venueName, invite.venueAddress);
   const copy = async (value: string, label: string) => { if (await copyText(value)) toast.success(`${label} 복사 완료`); else toast.error("복사할 수 없어요. 길게 눌러 복사해 주세요."); };
   const copyAccount = async (value: string) => { const copied = await copyAccountNumber(value); if (copied) toast.success(accountCopySuccessMessage()); else toast.error("복사할 수 없어요. 길게 눌러 복사해 주세요."); return copied; };
-  const share = async () => { const kakao = (window as any).Kakao; const shareImage = heroMedia?.kind === "image" ? heroMedia.url : HERO_IMAGE; if (kakao?.Share?.sendDefault) { kakao.Share.sendDefault({ objectType: "feed", content: { title: `${invite.babyName}의 첫 번째 생일`, description: invite.invitationTitle, imageUrl: `${location.origin}${shareImage}`, link: { mobileWebUrl: location.href, webUrl: location.href } } }); return; } if (navigator.share) await navigator.share({ title: `${invite.babyName}의 첫 번째 생일`, text: invite.invitationTitle, url: location.href }); else await copy(location.href, "초대장 링크"); };
+  const share = async () => { const kakao = (window as any).Kakao; if (kakao?.Share?.sendDefault) { kakao.Share.sendDefault({ objectType: "feed", content: { title: `${invite.babyName}의 첫 번째 생일`, description: invite.invitationTitle, imageUrl: `${location.origin}${HERO_IMAGE}`, link: { mobileWebUrl: location.href, webUrl: location.href } } }); return; } if (navigator.share) await navigator.share({ title: `${invite.babyName}의 첫 번째 생일`, text: invite.invitationTitle, url: location.href }); else await copy(location.href, "초대장 링크"); };
   const submitGuestbook = (event: React.FormEvent) => { event.preventDefault(); if (!guestName.trim() || !guestMessage.trim()) return toast.error("이름과 축하 메시지를 모두 입력해 주세요."); addGuestbook.mutate({ name: guestName.trim(), companionNames: normalizeCompanionNames(guestCompanions), message: guestMessage.trim(), website: "" }); };
   const submitRsvp = (event: React.FormEvent) => { event.preventDefault(); const summary = summarizeRsvpAttendees(rsvp.attendees); if (!summary.primaryName) return toast.error("참석하시는 분의 성함을 한 분 이상 입력해 주세요."); addRsvp.mutate({ name: summary.primaryName, companionNames: summary.companionNames, attendeeDetails: summary.attendees, attendance: rsvp.attendance, adults: summary.adults, children: summary.children, contact: rsvp.contact, note: rsvp.note }); };
   const toggleMusic = async () => { const audio = audioRef.current; if (!audio) return; if (audio.paused) { try { const next = await startBgmOnTap(audio); setMusicPlaying(next.isPlaying); setHasStartedMusic(next.hasStartedMusic); } catch { toast.error("음악을 재생할 수 없어요."); } } else { audio.pause(); setMusicPlaying(false); } };
 
   return <main className="hotel-invitation">
-    <audio ref={audioRef} src={BGM} preload="none" onEnded={() => setMusicPlaying(false)} />
+    <audio ref={audioRef} preload="metadata" onEnded={() => setMusicPlaying(false)}>
+      <source src={BGM} type="audio/mpeg" />
+      <source src={BGM_FALLBACK} type="audio/mpeg" />
+    </audio>
     <section className="hotel-hero">
-      <InvitationMediaView className="hero-media" media={heroMedia} fallback={HERO_IMAGE} alt="채원의 첫 번째 생일을 위한 호텔 스타일 케이크 테이블" priority />
+      <img src={HERO_IMAGE} alt="채원의 첫 번째 생일을 위한 호텔 스타일 케이크 테이블" />
       <div className="hero-veil" />
       <div className="hero-ribbon">⌇</div><div className="hero-seal"><span>FIRST YEAR</span><b>CW</b><i>2026</i></div>
       <div className="hero-content"><p>OUR BABY&apos;S FIRST BIRTHDAY</p><h1>강채원</h1><span className="hero-rule" /><strong>{invite.eventDate} · {invite.eventTime}</strong><small className="hero-venue">{formatVenueDisplay(invite.venueName)}</small></div>
