@@ -10,13 +10,12 @@ import { addCompanionInput, normalizeCompanionNames, removeCompanionInput } from
 import { createInitialRsvpAttendees, summarizeRsvpAttendees } from "@/lib/rsvp-attendees";
 import { CompanionFields, PartyNameLabel } from "@/components/CompanionFields";
 import { RsvpAttendeeFields } from "@/components/RsvpAttendeeFields";
-import { BgmGuide } from "@/components/BgmGuide";
 import { toast } from "sonner";
 import { Copy, MapPin, MessageCircle, Pause, Play, Share2 } from "lucide-react";
 import { AccountSection } from "@/components/AccountSection";
 
-const HERO_IMAGE = "/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png";
-const BGM = "/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3";
+const HERO_IMAGE = "/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png?v=20260903-mobile-hero-2";
+const BGM = "/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3?v=20260903-blue-danube-2";
 const BGM_FALLBACK = "https://upload.wikimedia.org/wikipedia/commons/transcoded/9/91/Strauss%2C_An_der_sch%C3%B6nen_blauen_Donau.ogg/Strauss%2C_An_der_sch%C3%B6nen_blauen_Donau.ogg.mp3";
 const fallback = { id: 0, babyName: "채원", fatherName: "강호성", motherName: "NGUYEN HONG NGOC", invitationTitle: "채원의 첫 번째 생일에 소중한 분들을 초대합니다.", greeting: "저희에게 찾아온 가장 빛나는 선물, 채원이가 어느덧 첫 번째 생일을 맞았습니다. 그동안 보내주신 따뜻한 사랑에 감사드리며, 소중한 분들과 함께 채원이의 첫걸음을 축복하는 자리를 마련했습니다.", eventDate: "2026. 10. 18 SUN", eventTime: "12:00 PM", venueName: "코트야드 메리어트 서울 명동\n3층 한양 1+2홀", venueAddress: "서울특별시 중구 남대문로 9", parkingInfo: "호텔 지하 주차장을 이용하실 수 있습니다. 행사 당일 주차 등록 및 세부 안내는 호텔 데스크에서 확인해 주세요.", heroImageUrl: null, galleryImageUrls: null, accountInfo: "강호성 | 카카오뱅크 3333-19-8058955" };
 
@@ -49,7 +48,6 @@ export default function Home() {
   const addRsvp = trpc.invitation.addRsvp.useMutation({ onSuccess: () => { setRsvpSent(true); toast.success("참석 여부가 전달되었어요."); } });
   const [rsvpSent, setRsvpSent] = useState(false);
   const [musicPlaying, setMusicPlaying] = useState(false);
-  const [hasStartedMusic, setHasStartedMusic] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [rsvp, setRsvp] = useState({ attendees: createInitialRsvpAttendees(), attendance: "attending" as "attending" | "unable", contact: "", note: "" });
   const accounts = useMemo(() => invite.accountInfo.split("\n").map(line => { const [label, ...rest] = line.split("|"); return { label: label?.trim() || "계좌", value: rest.join("|").trim() || line }; }), [invite.accountInfo]);
@@ -59,10 +57,10 @@ export default function Home() {
   const share = async () => { const kakao = (window as any).Kakao; if (kakao?.Share?.sendDefault) { kakao.Share.sendDefault({ objectType: "feed", content: { title: `${invite.babyName}의 첫 번째 생일`, description: invite.invitationTitle, imageUrl: `${location.origin}${HERO_IMAGE}`, link: { mobileWebUrl: location.href, webUrl: location.href } } }); return; } if (navigator.share) await navigator.share({ title: `${invite.babyName}의 첫 번째 생일`, text: invite.invitationTitle, url: location.href }); else await copy(location.href, "초대장 링크"); };
   const submitGuestbook = (event: React.FormEvent) => { event.preventDefault(); if (!guestName.trim() || !guestMessage.trim()) return toast.error("이름과 축하 메시지를 모두 입력해 주세요."); addGuestbook.mutate({ name: guestName.trim(), companionNames: normalizeCompanionNames(guestCompanions), message: guestMessage.trim(), website: "" }); };
   const submitRsvp = (event: React.FormEvent) => { event.preventDefault(); const summary = summarizeRsvpAttendees(rsvp.attendees); if (!summary.primaryName) return toast.error("참석하시는 분의 성함을 한 분 이상 입력해 주세요."); addRsvp.mutate({ name: summary.primaryName, companionNames: summary.companionNames, attendeeDetails: summary.attendees, attendance: rsvp.attendance, adults: summary.adults, children: summary.children, contact: rsvp.contact, note: rsvp.note }); };
-  const toggleMusic = async () => { const audio = audioRef.current; if (!audio) return; if (audio.paused) { try { const next = await startBgmOnTap(audio); setMusicPlaying(next.isPlaying); setHasStartedMusic(next.hasStartedMusic); } catch { toast.error("음악을 재생할 수 없어요."); } } else { audio.pause(); setMusicPlaying(false); } };
+  const toggleMusic = async () => { const audio = audioRef.current; if (!audio) return; if (audio.paused) { try { const next = await startBgmOnTap(audio); setMusicPlaying(next.isPlaying); } catch { toast.error("음악을 재생할 수 없어요."); } } else { audio.pause(); setMusicPlaying(false); } };
 
   return <main className="hotel-invitation">
-    <audio ref={audioRef} preload="metadata" onEnded={() => setMusicPlaying(false)}>
+    <audio ref={audioRef} preload="auto" loop>
       <source src={BGM} type="audio/mpeg" />
       <source src={BGM_FALLBACK} type="audio/mpeg" />
     </audio>
@@ -117,11 +115,16 @@ export default function Home() {
 
     <section className="hotel-closing"><div className="closing-ribbon">⌇</div><span>WITH LOVE,</span><h2>채원이의<br /><em>첫 번째 생일</em></h2><p>함께해 주시는 모든 분들께<br />진심으로 감사드립니다.</p><div className="closing-date"><b>2026</b><i>10 · 18</i></div></section>
 
-    <div className="bottom-share-bar">
-      <button type="button" onClick={toggleMusic} aria-label={musicPlaying ? "배경 음악 일시정지" : "배경 음악 재생"} className={musicPlaying ? "music-button active" : "music-button"}>{musicPlaying ? <Pause size={16} /> : <Play size={16} />}</button>
+    <div className="music-control">
+      <button type="button" onClick={toggleMusic} aria-label={musicPlaying ? "배경 음악 일시정지" : "배경 음악 재생"}>
+        {musicPlaying ? <Pause size={17} /> : <Play size={17} />}
+        <span>BGM</span>
+      </button>
+    </div>
+
+    <div className="share-bar">
       <button type="button" onClick={share}><Share2 size={15} /> 공유하기</button>
       <button type="button" onClick={() => copy(location.href, "초대장 링크")}><Copy size={15} /> 링크 복사</button>
     </div>
-    <BgmGuide show={!hasStartedMusic} onPlay={toggleMusic} />
   </main>;
 }
