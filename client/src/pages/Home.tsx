@@ -5,7 +5,7 @@ import { copyText } from "@/lib/copy";
 import { accountCopySuccessMessage, copyAccountNumber } from "@/lib/account-copy";
 import { buildVenueLinks, VENUE_MAP_SEARCH_QUERY } from "@/lib/venue-links";
 import { formatVenueDisplay } from "@/lib/venue-display";
-import { parseMedia, parseMediaList, type InvitationMedia } from "@/lib/invitation-media";
+import { parseMedia, type InvitationMedia } from "@/lib/invitation-media";
 import { startBgmOnTap } from "@/lib/bgm";
 import { addCompanionInput, normalizeCompanionNames, removeCompanionInput } from "@/lib/companions";
 import { createInitialRsvpAttendees, summarizeRsvpAttendees } from "@/lib/rsvp-attendees";
@@ -19,10 +19,6 @@ import { AccountSection } from "@/components/AccountSection";
 
 const HERO_IMAGE = "/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png";
 const BGM = "/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3";
-const GALLERY_FALLBACKS: InvitationMedia[] = [
-  { url: "/manus-storage/chaewon-gallery-feet.jpg", kind: "image", mimeType: "image/jpeg", fileName: "chaewon-gallery-feet.jpg" },
-  { url: "/manus-storage/chaewon-gallery-hands.jpg", kind: "image", mimeType: "image/jpeg", fileName: "chaewon-gallery-hands.jpg" },
-];
 const fallback = { id: 0, babyName: "채원", fatherName: "강호성", motherName: "NGUYEN HONG NGOC", invitationTitle: "채원의 첫 번째 생일에 소중한 분들을 초대합니다.", greeting: "저희에게 찾아온 가장 빛나는 선물, 채원이가 어느덧 첫 번째 생일을 맞았습니다. 그동안 보내주신 따뜻한 사랑에 감사드리며, 소중한 분들과 함께 채원이의 첫걸음을 축복하는 자리를 마련했습니다.", eventDate: "2026. 10. 18 SUN", eventTime: "12:00 PM", venueName: "코트야드 메리어트 서울 명동\n3층 한양 1+2홀", venueAddress: "서울특별시 중구 남대문로 9", parkingInfo: "호텔 지하 주차장을 이용하실 수 있습니다. 행사 당일 주차 등록 및 세부 안내는 호텔 데스크에서 확인해 주세요.", heroImageUrl: null, galleryImageUrls: null, accountInfo: "강호성 | 카카오뱅크 3333-19-8058955" };
 
 function Section({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
@@ -81,8 +77,6 @@ export default function Home() {
   const [rsvp, setRsvp] = useState({ attendees: createInitialRsvpAttendees(), attendance: "attending" as "attending" | "unable", contact: "", note: "" });
   const accounts = useMemo(() => invite.accountInfo.split("\n").map(line => { const [label, ...rest] = line.split("|"); return { label: label?.trim() || "계좌", value: rest.join("|").trim() || line }; }), [invite.accountInfo]);
   const heroMedia = parseMedia(invite.heroImageUrl);
-  const storedGalleryMedia = parseMediaList(invite.galleryImageUrls).filter(item => item.url !== heroMedia?.url && item.url !== HERO_IMAGE);
-  const galleryMedia = storedGalleryMedia.length > 0 ? storedGalleryMedia : GALLERY_FALLBACKS;
   const venueLinks = buildVenueLinks(invite.venueName, invite.venueAddress);
   const copy = async (value: string, label: string) => { if (await copyText(value)) toast.success(`${label} 복사 완료`); else toast.error("복사할 수 없어요. 길게 눌러 복사해 주세요."); };
   const copyAccount = async (value: string) => { const copied = await copyAccountNumber(value); if (copied) toast.success(accountCopySuccessMessage()); else toast.error("복사할 수 없어요. 길게 눌러 복사해 주세요."); return copied; };
@@ -103,25 +97,7 @@ export default function Home() {
 
     <Section label="INVITATION" className="invitation-letter"><div className="monogram"><b>CW</b><small>ONE</small></div><h2>사랑을 담아<br /><em>초대합니다</em></h2><p>{invite.greeting}</p><div className="parents">아빠 <b>{invite.fatherName}</b><i /> 엄마 <b>{invite.motherName}</b></div></Section>
 
-    {galleryMedia[0] && <Section label="GALLERY" className="gallery-section">
-      <div className="gallery-editorial">
-        <InvitationMediaView className="gallery-portrait" media={galleryMedia[0]} fallback={HERO_IMAGE} alt="채원이의 첫 해를 담은 사진" />
-        <div className="gallery-side-story">
-          <p>작은 손과 발, 매일 새로워지는 표정까지.<br />채원이의 첫 해를 함께 기억해 주세요.</p>
-        </div>
-      </div>
-    </Section>}
-
-    <section className="love-transition">
-      <InvitationMediaView className="seasonal-transition-media" media={galleryMedia[1] ?? galleryMedia[0] ?? null} fallback={HERO_IMAGE} alt="채원이의 첫 해를 담은 추억" />
-      <div><p>A year of love,</p><strong>a lifetime of joy.</strong></div>
-    </section>
-
-    {galleryMedia.length > 2 && <section className="memory-strip">
-      <div className="extra-gallery">
-        {galleryMedia.slice(2).map((media, index) => <InvitationMediaView key={`${media.url}-${index}`} className={index % 2 === 0 ? "gallery-blossom-close" : "gallery-blossom"} media={media} fallback={HERO_IMAGE} alt={`채원이의 추억 ${index + 3}`} />)}
-      </div>
-    </section>}
+    <section className="love-transition"><img src={HERO_IMAGE} alt="채원이의 첫돌을 위한 축하 테이블" /><div><p>A year of love,</p><strong>a lifetime of joy.</strong></div></section>
 
     <Section label="DATE & VENUE" className="venue-section"><div className="date-venue-card"><div className="date-block"><p>DATE & TIME</p><h2>2026. 10. 18</h2><span>일요일 낮 12시 00분</span><div className="calendar-row"><b>OCT</b><i>18</i><span>SUN</span></div></div><div className="venue-divider" /><div className="venue-block"><p>VENUE</p><h3>{formatVenueDisplay(invite.venueName)}</h3><span>{invite.venueAddress}</span><VenueMap /><div className="map-actions"><a href={venueLinks.naver} target="_blank" rel="noreferrer">네이버지도</a><a href={venueLinks.kakaoMap} target="_blank" rel="noreferrer">카카오맵</a></div><div className="parking-note"><MapPin size={16} /><p><b>주차 안내</b>{invite.parkingInfo}</p></div></div></div></Section>
 
@@ -170,6 +146,6 @@ export default function Home() {
 
     <section className="hotel-closing"><div className="closing-ribbon">⌇</div><p>채원이의 첫 번째 생일을<br /><em>함께 축하해 주셔서 감사합니다.</em></p></section>
     <div className="music-control">{!hasStartedMusic && !musicPlaying && <BgmGuide onActivate={async () => { await toggleMusic(); }} />}<button aria-label={musicPlaying ? "배경음악 일시정지" : "배경음악 재생"} onClick={toggleMusic}>{musicPlaying ? <Pause size={20} /> : <Play size={20} />}<span>BGM</span></button></div>
-    <nav className="share-bar"><button onClick={share}><Share2 size={16} /> 공유</button><button onClick={() => copy(location.href, "초대장 링크")}><Copy size={16} /> 링크 복사</button></nav>
+    <nav className="share-bar"><button onClick={share}><Share2 size={16} /> 카카오톡 공유</button><button onClick={() => copy(location.href, "초대장 링크")}><Copy size={16} /> 링크 복사</button></nav>
   </main>;
 }
