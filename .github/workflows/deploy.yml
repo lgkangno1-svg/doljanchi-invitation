@@ -1,20 +1,37 @@
-name: Validate and Deploy Invitation
+name: Deploy Frozen Invitation
+
+# PRODUCTION FREEZE
+# The public invitation must stay pinned to the owner-approved commit below.
+# Do not change FROZEN_INVITATION_SHA or re-enable push deployment unless the repository owner explicitly asks to unfreeze production.
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
-  group: deploy-invitation
-  cancel-in-progress: true
+  group: deploy-invitation-frozen
+  cancel-in-progress: false
+
+env:
+  FROZEN_INVITATION_SHA: add90ee0b38efcb85fea50f5b6292a2bda9cfc6a
 
 jobs:
   validate-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout frozen production revision
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.FROZEN_INVITATION_SHA }}
+
+      - name: Verify production revision is immutable
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$FROZEN_INVITATION_SHA"
+          echo "✅ Frozen invitation revision verified: $actual"
 
       - name: Restore invitation BGM
         run: |
@@ -102,4 +119,4 @@ jobs:
             docker compose down
             docker compose up -d
             docker image prune -f
-            echo "✅ Deploy complete"
+            echo "✅ Frozen invitation deploy complete"
