@@ -6,7 +6,7 @@ This repository serves the live first-birthday invitation at `invite.avocadoss.c
 
 The owner-approved production invitation is frozen at commit:
 
-`fa2cb01c456536715826b0424c3026dfb2ff3166`
+`e1a25f6647d0d86de12808ecdfba07b2572a184a`
 
 Do **not** modify, refactor, restyle, optimize, migrate, clean up, rename, regenerate, or otherwise alter the public invitation or its deployment unless the repository owner explicitly asks to change this invitation in the current task.
 
