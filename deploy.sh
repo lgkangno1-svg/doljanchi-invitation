@@ -8,13 +8,14 @@ REPO_DIR="$HOME/doljanchi-invitation"
 LOG_FILE="$REPO_DIR/deploy.log"
 IMAGE_NAME="doljanchi-invitation"
 PROJECT_NAME="doljanchi-invitation"
-FROZEN_SHA="fb901585f065adbe70210c45a7449c5aaa600a9a"
+FROZEN_SHA="fa2cb01c456536715826b0424c3026dfb2ff3166"
 BUILD_DIR="$REPO_DIR/.frozen-production-build"
 HERO_REL="client/public/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png"
 BGM_REL="client/public/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3"
-# The original AI-generated MP3 was never preserved. Use a stable public-domain
-# Chopin waltz recording for the intended luxury-hotel / banquet-hall mood.
-BGM_URL="https://commons.wikimedia.org/wiki/Special:Redirect/file/Waltz_Op._69_no._1_in_A_flat_major.mp3"
+# The original AI-generated MP3 was never preserved. Use the elegant public-domain
+# Blue Danube waltz recording (CC0 via Wikimedia Commons / Musopen) for a refined
+# luxury-hotel banquet mood.
+BGM_URL="https://upload.wikimedia.org/wikipedia/commons/transcoded/9/91/Strauss%2C_An_der_sch%C3%B6nen_blauen_Donau.ogg/Strauss%2C_An_der_sch%C3%B6nen_blauen_Donau.ogg.mp3"
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
@@ -47,9 +48,9 @@ mkdir -p "$(dirname "$BUILD_DIR/$HERO_REL")"
 git show "$FROZEN_SHA:$HERO_REL" > "$BUILD_DIR/$HERO_REL"
 test -s "$BUILD_DIR/$HERO_REL"
 
-# The first AI-generated BGM was not preserved as a Git blob. Restore a stable,
-# public-domain classical waltz matching the original luxury hotel direction.
-log "🎼 Restoring luxury-hotel BGM..."
+# Restore the approved luxury-hotel waltz locally so playback does not depend on a
+# third-party request after the site has loaded.
+log "🎼 Restoring Blue Danube luxury-hotel waltz..."
 mkdir -p "$(dirname "$BUILD_DIR/$BGM_REL")"
 curl -fL --retry 3 --retry-delay 2 --connect-timeout 15 \
   "$BGM_URL" \
@@ -76,16 +77,18 @@ log "🔄 Restarting frozen production container..."
 docker compose -p "$PROJECT_NAME" -f "$BUILD_DIR/docker-compose.yml" down
 docker compose -p "$PROJECT_NAME" -f "$BUILD_DIR/docker-compose.yml" up -d
 
-# Verify the exact public URLs before declaring success.
+# Verify the exact public URLs before declaring success. The server now preserves the
+# full nested /manus-storage path instead of dropping invitations/1/ to basename only.
 log "🌐 Verifying live static assets..."
-for attempt in 1 2 3 4 5; do
+for attempt in 1 2 3 4 5 6 7 8; do
   if curl -fsS --max-time 5 "http://127.0.0.1:3001/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png" >/dev/null \
     && curl -fsS --max-time 5 "http://127.0.0.1:3001/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3" >/dev/null; then
-    log "✅ Cake hero and BGM are publicly reachable"
+    log "✅ Cake hero and Blue Danube BGM are publicly reachable"
     break
   fi
-  if [ "$attempt" -eq 5 ]; then
-    log "❌ Static asset verification failed; refusing to report deployment success"
+  if [ "$attempt" -eq 8 ]; then
+    log "❌ Static asset verification failed; container logs follow"
+    docker logs --tail 80 "$PROJECT_NAME" 2>&1 | tee -a "$LOG_FILE" || true
     exit 1
   fi
   sleep 2
