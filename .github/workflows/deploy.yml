@@ -5,10 +5,6 @@ name: Deploy Frozen Invitation
 # Do not change FROZEN_INVITATION_SHA or re-enable push deployment unless the repository owner explicitly asks to unfreeze production.
 
 on:
-  # ONE-TIME restoration trigger. Remove immediately after this deployment succeeds.
-  push:
-    branches: [main]
-    paths: [.github/workflows/deploy.yml]
   workflow_dispatch:
 
 permissions:
