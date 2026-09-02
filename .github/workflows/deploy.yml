@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  FROZEN_INVITATION_SHA: fa2cb01c456536715826b0424c3026dfb2ff3166
+  FROZEN_INVITATION_SHA: e1a25f6647d0d86de12808ecdfba07b2572a184a
 
 jobs:
   validate-and-deploy:
@@ -33,26 +33,28 @@ jobs:
           test "$actual" = "$FROZEN_INVITATION_SHA"
           echo "✅ Frozen invitation revision verified: $actual"
 
-      - name: Verify owner-approved invitation media
+      - name: Verify owner-approved invitation media and controls
         run: |
           set -euo pipefail
+          grep -F '20260903-mobile-hero-2' client/src/pages/Home.tsx
           grep -F '<img src={HERO_IMAGE} alt="채원의 첫 번째 생일을 위한 호텔 스타일 케이크 테이블"' client/src/pages/Home.tsx
-          grep -F 'className="love-transition"><img src={HERO_IMAGE}' client/src/pages/Home.tsx
+          grep -F 'className="music-control"' client/src/pages/Home.tsx
+          grep -F 'className="share-bar"' client/src/pages/Home.tsx
+          grep -F 'preload="auto" loop' client/src/pages/Home.tsx
           grep -F '<source src={BGM} type="audio/mpeg" />' client/src/pages/Home.tsx
           grep -F 'Strauss%2C_An_der_sch%C3%B6nen_blauen_Donau' client/src/pages/Home.tsx
           grep -F 'normalizedKey' server/_core/storageProxy.ts
           grep -F 'path.resolve(import.meta.dirname, "public/manus-storage", normalizedKey)' server/_core/storageProxy.ts
-          grep -F '카카오톡 공유' client/src/pages/Home.tsx
           test -s client/public/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png
-          if grep -F 'className="gallery-portrait"' client/src/pages/Home.tsx; then
-            echo "::error::The later AI-added standalone gallery layout has returned. Production must remain on the restored original layout."
+          if grep -F 'bottom-share-bar' client/src/pages/Home.tsx; then
+            echo "::error::Broken legacy bottom-share-bar returned."
             exit 1
           fi
-          if grep -F 'galleryMedia.slice(2)' client/src/pages/Home.tsx; then
-            echo "::error::The later AI-added memory strip has returned. Production must remain on the restored original layout."
+          if grep -F '<BgmGuide' client/src/pages/Home.tsx; then
+            echo "::error::Broken legacy BgmGuide integration returned."
             exit 1
           fi
-          echo "✅ Original cake hero path, nested storage routing, and Blue Danube BGM verified"
+          echo "✅ Mobile hero cache-bust, fixed BGM control, nested storage routing, and Blue Danube BGM verified"
 
       - name: Restore Blue Danube invitation BGM
         run: |
@@ -94,10 +96,9 @@ jobs:
         run: |
           if [ -n "$MINIPC_HOST" ] && [ -n "$MINIPC_USER" ] && [ -n "$MINIPC_SSH_KEY" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
-            echo "✅ Mini PC deployment credentials are configured"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "⚠️ Validation passed, but Mini PC deployment credentials are not configured. Skipping Docker build/deploy."
+            echo "⚠️ Validation passed; Mini PC credentials are not configured."
           fi
 
       - name: Build Docker image
