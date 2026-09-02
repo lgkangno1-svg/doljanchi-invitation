@@ -17,7 +17,7 @@ import { AccountSection } from "@/components/AccountSection";
 
 const HERO_IMAGE = "/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png";
 const BGM = "/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3";
-const BGM_FALLBACK = "https://cdn.pixabay.com/download/audio/2024/02/27/audio_f76c4a5d60.mp3?filename=lorenzobuczek-breton-lullaby-berceuse-bretonne-193499.mp3";
+const BGM_FALLBACK = "https://upload.wikimedia.org/wikipedia/commons/transcoded/9/91/Strauss%2C_An_der_sch%C3%B6nen_blauen_Donau.ogg/Strauss%2C_An_der_sch%C3%B6nen_blauen_Donau.ogg.mp3";
 const fallback = { id: 0, babyName: "채원", fatherName: "강호성", motherName: "NGUYEN HONG NGOC", invitationTitle: "채원의 첫 번째 생일에 소중한 분들을 초대합니다.", greeting: "저희에게 찾아온 가장 빛나는 선물, 채원이가 어느덧 첫 번째 생일을 맞았습니다. 그동안 보내주신 따뜻한 사랑에 감사드리며, 소중한 분들과 함께 채원이의 첫걸음을 축복하는 자리를 마련했습니다.", eventDate: "2026. 10. 18 SUN", eventTime: "12:00 PM", venueName: "코트야드 메리어트 서울 명동\n3층 한양 1+2홀", venueAddress: "서울특별시 중구 남대문로 9", parkingInfo: "호텔 지하 주차장을 이용하실 수 있습니다. 행사 당일 주차 등록 및 세부 안내는 호텔 데스크에서 확인해 주세요.", heroImageUrl: null, galleryImageUrls: null, accountInfo: "강호성 | 카카오뱅크 3333-19-8058955" };
 
 function Section({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
@@ -108,23 +108,20 @@ export default function Home() {
       </form>
 
       <div className="message-list">
-        {(guestbook.data ?? []).map(entry => (
-          <article key={entry.id}>
-            <p>{entry.message}</p>
-            <footer>
-              <span>{new Date(entry.createdAt).toLocaleDateString("ko-KR")}</span>
-              <b><PartyNameLabel primaryName={entry.authorName} companionNames={entry.companionNames} /></b>
-            </footer>
-          </article>
-        ))}
-        {(guestbook.data?.length ?? 0) === 0 && <p className="message-more">첫 번째 축하 메시지를 남겨주세요.</p>}
+        {guestbook.data?.map(message => <article key={message.id}><div className="message-topline"><div><span><PartyNameLabel primaryName={message.name} companionNames={message.companionNames} /></span><time>{new Date(message.createdAt).toLocaleDateString("ko-KR")}</time></div></div><p>{message.message}</p></article>)}
+        {guestbook.data?.length === 0 && <p className="empty-message">첫 번째 축하 메시지를 남겨주세요.</p>}
       </div>
     </Section>
 
-    <AccountSection accounts={accounts} copyAccount={copyAccount} />
+    <Section label="FOR YOUR HEART" className="account-hotel"><AccountSection accounts={accounts} onCopy={copyAccount} /></Section>
 
-    <section className="hotel-closing"><div className="closing-ribbon">⌇</div><p>채원이의 첫 번째 생일을<br /><em>함께 축하해 주셔서 감사합니다.</em></p></section>
-    <div className="music-control">{!hasStartedMusic && !musicPlaying && <BgmGuide onActivate={async () => { await toggleMusic(); }} />}<button aria-label={musicPlaying ? "배경음악 일시정지" : "배경음악 재생"} onClick={toggleMusic}>{musicPlaying ? <Pause size={20} /> : <Play size={20} />}<span>BGM</span></button></div>
-    <nav className="share-bar"><button onClick={share}><Share2 size={16} /> 카카오톡 공유</button><button onClick={() => copy(location.href, "초대장 링크")}><Copy size={16} /> 링크 복사</button></nav>
+    <section className="hotel-closing"><div className="closing-ribbon">⌇</div><span>WITH LOVE,</span><h2>채원이의<br /><em>첫 번째 생일</em></h2><p>함께해 주시는 모든 분들께<br />진심으로 감사드립니다.</p><div className="closing-date"><b>2026</b><i>10 · 18</i></div></section>
+
+    <div className="bottom-share-bar">
+      <button type="button" onClick={toggleMusic} aria-label={musicPlaying ? "배경 음악 일시정지" : "배경 음악 재생"} className={musicPlaying ? "music-button active" : "music-button"}>{musicPlaying ? <Pause size={16} /> : <Play size={16} />}</button>
+      <button type="button" onClick={share}><Share2 size={15} /> 공유하기</button>
+      <button type="button" onClick={() => copy(location.href, "초대장 링크")}><Copy size={15} /> 링크 복사</button>
+    </div>
+    <BgmGuide show={!hasStartedMusic} onPlay={toggleMusic} />
   </main>;
 }
