@@ -27,6 +27,8 @@ jobs:
           set -euo pipefail
           git cat-file -e "$FROZEN_INVITATION_SHA^{commit}"
 
+          # Runtime and frozen deployment source must remain byte-for-byte identical
+          # to the owner-approved production revision.
           protected_paths=(
             client
             server
@@ -39,7 +41,6 @@ jobs:
             vitest.config.ts
             Dockerfile
             docker-compose.yml
-            deploy.sh
           )
 
           if ! git diff --quiet "$FROZEN_INVITATION_SHA" -- "${protected_paths[@]}"; then
@@ -50,4 +51,20 @@ jobs:
             exit 1
           fi
 
-          echo "✅ Live invitation runtime matches frozen owner-approved revision."
+          # Mini PC local deployment must build from the frozen SHA, never mutable main.
+          grep -F 'FROZEN_SHA="add90ee0b38efcb85fea50f5b6292a2bda9cfc6a"' deploy.sh
+          grep -F 'git archive "$FROZEN_SHA"' deploy.sh
+          if grep -F 'git pull origin main' deploy.sh; then
+            echo "::error::deploy.sh must never deploy mutable main."
+            exit 1
+          fi
+
+          # GitHub deployment must stay manual-only and pinned to the same exact SHA.
+          grep -F 'FROZEN_INVITATION_SHA: add90ee0b38efcb85fea50f5b6292a2bda9cfc6a' .github/workflows/deploy.yml
+          grep -F 'workflow_dispatch:' .github/workflows/deploy.yml
+          if grep -Eq '^[[:space:]]+push:' .github/workflows/deploy.yml; then
+            echo "::error::Automatic push deployment is forbidden for the frozen invitation."
+            exit 1
+          fi
+
+          echo "✅ Live invitation runtime and both deployment paths are frozen to the owner-approved revision."
