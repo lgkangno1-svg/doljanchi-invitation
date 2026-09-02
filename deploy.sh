@@ -1,35 +1,62 @@
 #!/bin/bash
-# deploy.sh - 미니PC에서 실행되는 자동 배포 스크립트
-# 위치: ~/doljanchi-invitation/deploy.sh
+# deploy.sh - Mini PC production deployment
+# IMPORTANT: Production is permanently pinned to the owner-approved invitation revision.
 
-set -e
+set -euo pipefail
 
 REPO_DIR="$HOME/doljanchi-invitation"
 LOG_FILE="$REPO_DIR/deploy.log"
 IMAGE_NAME="doljanchi-invitation"
+PROJECT_NAME="doljanchi-invitation"
+FROZEN_SHA="add90ee0b38efcb85fea50f5b6292a2bda9cfc6a"
+BUILD_DIR="$REPO_DIR/.frozen-production-build"
+BGM_URL="https://cdn.pixabay.com/download/audio/2024/02/27/audio_f76c4a5d60.mp3?filename=lorenzobuczek-breton-lullaby-berceuse-bretonne-193499.mp3"
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
 }
 
-log "🚀 배포 시작"
+cleanup() {
+  rm -rf "$BUILD_DIR"
+}
+trap cleanup EXIT
 
+log "🚀 Frozen invitation deployment started"
 cd "$REPO_DIR"
 
-# 최신 코드 pull
-log "📥 git pull..."
-git pull origin main
+# Fetch objects only. Never pull/reset/checkout main for production.
+log "📥 Fetching owner-approved revision $FROZEN_SHA..."
+git fetch --no-tags origin "$FROZEN_SHA"
+git cat-file -e "$FROZEN_SHA^{commit}"
 
-# Docker 이미지 빌드
-log "🔨 Docker 이미지 빌드..."
-docker build -t "$IMAGE_NAME:latest" .
+# Export the exact approved source into an isolated build context so future main changes
+# cannot affect the live invitation even if this script is executed automatically.
+log "🔒 Preparing immutable production source..."
+rm -rf "$BUILD_DIR"
+mkdir -p "$BUILD_DIR"
+git archive "$FROZEN_SHA" | tar -x -C "$BUILD_DIR"
 
-# 컨테이너 재시작
-log "🔄 컨테이너 재시작..."
-docker compose down
-docker compose up -d
+# The BGM is intentionally restored at deploy time and is not sourced from mutable main.
+mkdir -p "$BUILD_DIR/client/public/manus-storage"
+curl -fL --retry 3 --retry-delay 2 --connect-timeout 15 \
+  "$BGM_URL" \
+  -o "$BUILD_DIR/client/public/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3"
+test -s "$BUILD_DIR/client/public/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3"
 
-# 오래된 이미지 정리
+# Keep server secrets/config local to the Mini PC while using the frozen compose definition.
+if [ ! -f "$REPO_DIR/.env" ]; then
+  log "❌ Missing $REPO_DIR/.env; refusing to deploy"
+  exit 1
+fi
+cp "$REPO_DIR/.env" "$BUILD_DIR/.env"
+chmod 600 "$BUILD_DIR/.env"
+
+log "🔨 Building immutable Docker image..."
+docker build -t "$IMAGE_NAME:latest" "$BUILD_DIR"
+
+log "🔄 Restarting frozen production container..."
+docker compose -p "$PROJECT_NAME" -f "$BUILD_DIR/docker-compose.yml" down
+docker compose -p "$PROJECT_NAME" -f "$BUILD_DIR/docker-compose.yml" up -d
+
 docker image prune -f
-
-log "✅ 배포 완료"
+log "✅ Frozen invitation deployment complete: $FROZEN_SHA"
