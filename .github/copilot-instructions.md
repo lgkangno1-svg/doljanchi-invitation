@@ -2,7 +2,7 @@
 
 The live site `invite.avocadoss.co.kr` must remain unchanged unless the repository owner explicitly asks to modify this invitation in the current task.
 
-Production is pinned to commit `fb901585f065adbe70210c45a7449c5aaa600a9a`.
+Production is pinned to commit `fa2cb01c456536715826b0424c3026dfb2ff3166`.
 
 Do not propose or apply edits to the public invitation UI, styles, media, invitation-related API/data behavior, Docker configuration, or deployment workflow as part of generic refactors, audits, repository-wide cleanups, design rollouts, migrations, dependency updates, or multi-repository tasks.
 
