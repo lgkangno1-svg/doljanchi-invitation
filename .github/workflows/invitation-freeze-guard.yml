@@ -1,0 +1,53 @@
+name: Invitation Freeze Guard
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  FROZEN_INVITATION_SHA: add90ee0b38efcb85fea50f5b6292a2bda9cfc6a
+
+jobs:
+  protect-live-invitation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository with history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reject production invitation changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git cat-file -e "$FROZEN_INVITATION_SHA^{commit}"
+
+          protected_paths=(
+            client
+            server
+            shared
+            drizzle
+            package.json
+            pnpm-lock.yaml
+            tsconfig.json
+            vite.config.ts
+            vitest.config.ts
+            Dockerfile
+            docker-compose.yml
+            deploy.sh
+          )
+
+          if ! git diff --quiet "$FROZEN_INVITATION_SHA" -- "${protected_paths[@]}"; then
+            echo "::error::LIVE INVITATION IS FROZEN. Runtime/UI/media/deployment-source files differ from owner-approved commit $FROZEN_INVITATION_SHA."
+            echo "Changed protected files:"
+            git diff --name-only "$FROZEN_INVITATION_SHA" -- "${protected_paths[@]}"
+            echo "Only an explicit owner request to modify invite.avocadoss.co.kr may authorize updating the frozen production SHA."
+            exit 1
+          fi
+
+          echo "✅ Live invitation runtime matches frozen owner-approved revision."
