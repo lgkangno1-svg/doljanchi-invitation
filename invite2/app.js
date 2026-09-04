@@ -17,16 +17,24 @@ function createRsvpNote(value) {
   return note ? `${RSVP_NOTE_PREFIX}${note}` : '[invite2] 조부모님 지인용 초대장';
 }
 
+const attendanceInput = form.querySelector('input[name="attendance"]');
+const adultsInput = form.querySelector('input[name="adults"]');
+const childrenInput = form.querySelector('input[name="children"]');
+const nameInput = form.querySelector('input[name="name"]');
+const companionsInput = form.querySelector('input[name="companions"]');
+const contactInput = form.querySelector('input[name="contact"]');
+const noteInput = form.querySelector('textarea[name="note"]');
+
 document.querySelectorAll('.attendance').forEach(button => button.addEventListener('click', () => {
   document.querySelectorAll('.attendance').forEach(item => item.classList.remove('active'));
   button.classList.add('active');
-  form.elements.attendance.value = button.dataset.value;
+  if (attendanceInput) attendanceInput.value = button.dataset.value;
   const unable = button.dataset.value === 'unable';
   if (unable) {
-    form.elements.adults.value = '0';
-    form.elements.children.value = '0';
-  } else if (Number(form.elements.adults.value) === 0) {
-    form.elements.adults.value = '1';
+    if (adultsInput) adultsInput.value = '0';
+    if (childrenInput) childrenInput.value = '0';
+  } else if (adultsInput && Number(adultsInput.value) === 0) {
+    adultsInput.value = '1';
   }
 }));
 
@@ -73,16 +81,16 @@ musicButton.addEventListener('click', async () => {
 form.addEventListener('submit', async event => {
   event.preventDefault();
   const submit = form.querySelector('button[type="submit"]');
-  const name = form.elements.name.value.trim();
+  const name = (nameInput ? nameInput.value : '').trim();
   if (!name) {
     showToast('성함을 입력해 주세요');
-    form.elements.name.focus();
+    if (nameInput) nameInput.focus();
     return;
   }
-  const companions = form.elements.companions.value.split(',').map(value => value.trim()).filter(Boolean).slice(0, 19);
-  const attendance = form.elements.attendance.value;
-  const adults = Math.max(0, Math.min(20, Number(form.elements.adults.value) || 0));
-  const children = Math.max(0, Math.min(20, Number(form.elements.children.value) || 0));
+  const companions = (companionsInput ? companionsInput.value : '').split(',').map(value => value.trim()).filter(Boolean).slice(0, 19);
+  const attendance = (attendanceInput ? attendanceInput.value : 'attending') || 'attending';
+  const adults = Math.max(0, Math.min(20, Number(adultsInput ? adultsInput.value : 0) || 0));
+  const children = Math.max(0, Math.min(20, Number(childrenInput ? childrenInput.value : 0) || 0));
   if (attendance === 'attending' && adults + children < 1) {
     showToast('참석 인원을 입력해 주세요');
     return;
@@ -95,8 +103,8 @@ form.addEventListener('submit', async event => {
     adults,
     children,
     meal: true,
-    contact: form.elements.contact.value.trim(),
-    note: createRsvpNote(form.elements.note.value),
+    contact: (contactInput ? contactInput.value : '').trim(),
+    note: createRsvpNote(noteInput ? noteInput.value : ''),
   };
   submit.disabled = true;
   submit.textContent = '전송 중...';
