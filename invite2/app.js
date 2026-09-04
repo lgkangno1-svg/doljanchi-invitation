@@ -17,7 +17,7 @@ function createRsvpNote(value) {
   return note ? `${RSVP_NOTE_PREFIX}${note}` : '[invite2] 조부모님 지인용 초대장';
 }
 
-const attendanceInput = form.querySelector('input[name="attendance"]');
+let selectedAttendance = 'attending';
 const adultsInput = form.querySelector('input[name="adults"]');
 const childrenInput = form.querySelector('input[name="children"]');
 const nameInput = form.querySelector('input[name="name"]');
@@ -28,7 +28,7 @@ const noteInput = form.querySelector('textarea[name="note"]');
 document.querySelectorAll('.attendance').forEach(button => button.addEventListener('click', () => {
   document.querySelectorAll('.attendance').forEach(item => item.classList.remove('active'));
   button.classList.add('active');
-  if (attendanceInput) attendanceInput.value = button.dataset.value;
+  selectedAttendance = button.dataset.value;
   const unable = button.dataset.value === 'unable';
   if (unable) {
     if (adultsInput) adultsInput.value = '0';
@@ -88,7 +88,7 @@ form.addEventListener('submit', async event => {
     return;
   }
   const companions = (companionsInput ? companionsInput.value : '').split(',').map(value => value.trim()).filter(Boolean).slice(0, 19);
-  const attendance = (attendanceInput ? attendanceInput.value : 'attending') || 'attending';
+  const attendance = selectedAttendance;
   const adults = Math.max(0, Math.min(20, Number(adultsInput ? adultsInput.value : 0) || 0));
   const children = Math.max(0, Math.min(20, Number(childrenInput ? childrenInput.value : 0) || 0));
   if (attendance === 'attending' && adults + children < 1) {
