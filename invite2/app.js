@@ -1,8 +1,4 @@
-const form = document.querySelector('#rsvp-form');
-const success = document.querySelector('#rsvp-success');
 const toast = document.querySelector('#toast');
-const RSVP_NOTE_PREFIX = '[invite2] ';
-const RSVP_NOTE_MAX_LENGTH = 300;
 let toastTimer;
 
 function showToast(message) {
@@ -11,32 +7,6 @@ function showToast(message) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
 }
-
-function createRsvpNote(value) {
-  const note = value.trim().slice(0, RSVP_NOTE_MAX_LENGTH - RSVP_NOTE_PREFIX.length);
-  return note ? `${RSVP_NOTE_PREFIX}${note}` : '[invite2] 조부모님 지인용 초대장';
-}
-
-let selectedAttendance = 'attending';
-const adultsInput = form.querySelector('input[name="adults"]');
-const childrenInput = form.querySelector('input[name="children"]');
-const nameInput = form.querySelector('input[name="name"]');
-const companionsInput = form.querySelector('input[name="companions"]');
-const contactInput = form.querySelector('input[name="contact"]');
-const noteInput = form.querySelector('textarea[name="note"]');
-
-document.querySelectorAll('.attendance').forEach(button => button.addEventListener('click', () => {
-  document.querySelectorAll('.attendance').forEach(item => item.classList.remove('active'));
-  button.classList.add('active');
-  selectedAttendance = button.dataset.value;
-  const unable = button.dataset.value === 'unable';
-  if (unable) {
-    if (adultsInput) adultsInput.value = '0';
-    if (childrenInput) childrenInput.value = '0';
-  } else if (adultsInput && Number(adultsInput.value) === 0) {
-    adultsInput.value = '1';
-  }
-}));
 
 document.querySelectorAll('.account-row').forEach(button => button.addEventListener('click', async () => {
   try {
@@ -75,58 +45,5 @@ musicButton.addEventListener('click', async () => {
     }
   } catch {
     showToast('음악을 재생할 수 없습니다');
-  }
-});
-
-form.addEventListener('submit', async event => {
-  event.preventDefault();
-  const submit = form.querySelector('button[type="submit"]');
-  const name = (nameInput ? nameInput.value : '').trim();
-  if (!name) {
-    showToast('성함을 입력해 주세요');
-    if (nameInput) nameInput.focus();
-    return;
-  }
-  const companions = (companionsInput ? companionsInput.value : '').split(',').map(value => value.trim()).filter(Boolean).slice(0, 19);
-  const attendance = selectedAttendance;
-  const adults = Math.max(0, Math.min(20, Number(adultsInput ? adultsInput.value : 0) || 0));
-  const children = Math.max(0, Math.min(20, Number(childrenInput ? childrenInput.value : 0) || 0));
-  if (attendance === 'attending' && adults + children < 1) {
-    showToast('참석 인원을 입력해 주세요');
-    return;
-  }
-  const payload = {
-    name,
-    companionNames: companions,
-    attendeeDetails: [],
-    attendance,
-    adults,
-    children,
-    meal: true,
-    contact: (contactInput ? contactInput.value : '').trim(),
-    note: createRsvpNote(noteInput ? noteInput.value : ''),
-  };
-  submit.disabled = true;
-  submit.textContent = '전송 중...';
-  try {
-    const response = await fetch('/api/trpc/invitation.addRsvp', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ json: payload }),
-    });
-    const data = await response.json().catch(() => null);
-    if (!response.ok || (data && data.error)) {
-      throw new Error(data?.error?.json?.message || data?.error?.message || 'RSVP failed');
-    }
-    form.hidden = true;
-    success.hidden = false;
-    success.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    showToast('참석 여부가 전달되었습니다');
-  } catch (error) {
-    console.error(error);
-    showToast('전송에 실패했습니다. 잠시 후 다시 시도해 주세요');
-  } finally {
-    submit.disabled = false;
-    submit.textContent = '응답 보내기';
   }
 });
