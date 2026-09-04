@@ -103,7 +103,47 @@
 
   <div class="floating-actions">
     <button id="share-button" type="button" aria-label="초대장 공유">공유</button>
-    <button id="music-button" type="button" aria-label="배경음악 재생">음악</button>
+    <div class="music-action-wrap">
+      <div id="music-guide" class="music-guide" role="status">
+        <span>음악 재생하기</span>
+        <span class="music-guide-arrow">➔</span>
+      </div>
+      <button id="music-button" type="button" aria-label="배경음악 재생">음악</button>
+    </div>
+  </div>
+
+  <div id="share-modal" class="share-modal" hidden>
+    <div class="share-modal-backdrop" id="share-backdrop"></div>
+    <div class="share-modal-content" role="dialog" aria-modal="true" aria-label="초대장 공유">
+      <div class="share-modal-header">
+        <h3>초대장 공유하기</h3>
+        <button type="button" id="share-close" class="share-close" aria-label="닫기">×</button>
+      </div>
+      <p class="share-modal-desc">소중한 분들께 채원이의 첫돌 초대장을 전해보세요.</p>
+      <div class="share-options">
+        <button type="button" id="share-kakao" class="share-opt-btn kakao">
+          <span class="share-opt-badge kakao-badge">카톡</span>
+          <div class="share-opt-info">
+            <strong>카카오톡으로 공유</strong>
+            <small>카카오톡 메신저로 초대장 전송</small>
+          </div>
+        </button>
+        <button type="button" id="share-sms" class="share-opt-btn sms">
+          <span class="share-opt-badge sms-badge">문자</span>
+          <div class="share-opt-info">
+            <strong>문자메시지(SMS)로 공유</strong>
+            <small>문자 앱으로 초대 문구 및 링크 전송</small>
+          </div>
+        </button>
+        <button type="button" id="share-copy" class="share-opt-btn copy">
+          <span class="share-opt-badge copy-badge">링크</span>
+          <div class="share-opt-info">
+            <strong>초대장 링크 복사</strong>
+            <small>주소를 복사하여 원하는 곳에 붙여넣기</small>
+          </div>
+        </button>
+      </div>
+    </div>
   </div>
 
   <audio id="bgm" preload="none" loop>
