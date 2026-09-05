@@ -1,0 +1,55 @@
+name: Invite2 Live UI Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/invite2-ui-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Probe live assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/invite2-check
+          for path in '/' '/styles.css?v=6' '/app.js?v=6'; do
+            key="$(echo "$path" | tr '/?=&.' '_')"
+            curl -fsSL -D "/tmp/invite2-check/${key}.headers" -o "/tmp/invite2-check/${key}.body" "https://invite2.avocadoss.co.kr${path}"
+            echo "=== $path ==="
+            grep -Ei '^(HTTP/|content-type:|content-length:|cache-control:|etag:|cf-cache-status:|age:)' "/tmp/invite2-check/${key}.headers" | tr -d '\r' || true
+            echo "bytes=$(wc -c < /tmp/invite2-check/${key}.body)"
+          done
+          grep -q 'invitation-collage' /tmp/invite2-check/___.body
+          grep -q 'Invitation section reference layout' /tmp/invite2-check/_styles_css_v_6.body
+          grep -qi '^content-type: text/css' /tmp/invite2-check/_styles_css_v_6.headers
+
+      - name: Capture mobile screenshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
+          if [[ -z "$CHROME" ]]; then
+            echo 'No Chrome binary found'
+            exit 2
+          fi
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
+            --window-size=390,844 --virtual-time-budget=8000 \
+            --screenshot=/tmp/invite2-check/mobile.png \
+            'https://invite2.avocadoss.co.kr/?ui_check=1'
+          test -s /tmp/invite2-check/mobile.png
+          ls -lh /tmp/invite2-check/mobile.png
+
+      - name: Upload diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: invite2-live-ui-check
+          path: /tmp/invite2-check
+          retention-days: 1
