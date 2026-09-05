@@ -73,12 +73,12 @@ jobs:
           set -euo pipefail
           mkdir -p invite2/assets
           for name in left center right; do
-            src="invite2/assets-src/collage-${name}.webp.b64"
+            src="invite2/assets-src/mini-${name}.webp.b64"
             out="invite2/assets/collage-${name}.webp"
             test -s "$src"
             base64 --decode "$src" > "$out"
             size="$(wc -c < "$out")"
-            [[ "$size" -gt 20000 ]] || { echo "::error::$out decoded too small: $size bytes"; exit 9; }
+            [[ "$size" -gt 6000 ]] || { echo "::error::$out decoded too small: $size bytes"; exit 9; }
             magic="$(xxd -p -l 12 "$out")"
             [[ "$magic" == 52494646*57454250 ]] || { echo "::error::$out is not a valid RIFF/WEBP file"; exit 10; }
             echo "$out: $size bytes"
@@ -159,6 +159,6 @@ jobs:
             image_type="$(awk 'BEGIN{IGNORECASE=1} /^content-type:/ {print tolower($0); exit}' <<<"$image_headers")"
             image_len="$(awk 'BEGIN{IGNORECASE=1} /^content-length:/ {gsub(/[^0-9]/, "", $0); print $0; exit}' <<<"$image_headers")"
             [[ "$image_type" == *'image/webp'* ]] || { echo "::error::collage-${name}.webp MIME invalid: $image_type"; exit 11; }
-            if [[ -n "$image_len" ]]; then [[ "$image_len" -gt 20000 ]] || { echo "::error::collage-${name}.webp too small in production: $image_len"; exit 12; }; fi
+            if [[ -n "$image_len" ]]; then [[ "$image_len" -gt 6000 ]] || { echo "::error::collage-${name}.webp too small in production: $image_len"; exit 12; }; fi
           done
           echo '✅ invite2 production HTML, CSS/JS, and supplied WebP collage assets verified.'
