@@ -5,6 +5,7 @@ afterEach(() => {
   delete process.env.TELEGRAM_BOT_TOKEN;
   delete process.env.TELEGRAM_CHAT_ID;
   delete process.env.TELEGRAM_BOT_TOKEN_FILE;
+  delete process.env.TELEGRAM_CHAT_ID_FILE;
   vi.unstubAllGlobals();
 });
 
