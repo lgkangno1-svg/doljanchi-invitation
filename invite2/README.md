@@ -30,3 +30,5 @@ Do **not** modify, refactor, restyle, optimize, clean up, rename, or redeploy un
 - Background music toggle ("음악" / "정지")
 - Map links to Naver Map and Kakao Map
 - RSVP form and guestbook are intentionally omitted.
+
+<!-- deployment retriggered after Cloudflare repository secrets were configured on 2026-09-06 -->
