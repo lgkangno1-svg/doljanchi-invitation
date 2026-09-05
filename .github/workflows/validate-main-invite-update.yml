@@ -1,5 +1,6 @@
 name: Validate Main Invitation Update
 
+# Re-run against the latest owner-approved main invitation source after type repair.
 on:
   push:
     branches: [main]
