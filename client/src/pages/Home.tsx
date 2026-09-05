@@ -13,10 +13,14 @@ import { RsvpAttendeeFields } from "@/components/RsvpAttendeeFields";
 import { toast } from "sonner";
 import { Copy, MapPin, MessageCircle, Pause, Play, Share2 } from "lucide-react";
 import { AccountSection } from "@/components/AccountSection";
+import "../main-family-collage.css";
 
 const HERO_IMAGE = "/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png?v=20260903-mobile-hero-2";
 const BGM = "/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3?v=20260903-blue-danube-2";
 const BGM_FALLBACK = "https://upload.wikimedia.org/wikipedia/commons/transcoded/9/91/Strauss%2C_An_der_sch%C3%B6nen_blauen_Donau.ogg/Strauss%2C_An_der_sch%C3%B6nen_blauen_Donau.ogg.mp3";
+const FAMILY_PHOTO_LEFT = "/manus-storage/chaewon-family-feeding.webp?v=20260906-main-family";
+const FAMILY_PHOTO_CENTER = "/manus-storage/chaewon-family-together.webp?v=20260906-main-family";
+const FAMILY_PHOTO_RIGHT = "/manus-storage/chaewon-baby-swaddle.webp?v=20260906-main-family";
 const fallback = { id: 0, babyName: "채원", fatherName: "강호성", motherName: "NGUYEN HONG NGOC", invitationTitle: "채원의 첫 번째 생일에 소중한 분들을 초대합니다.", greeting: "저희에게 찾아온 가장 빛나는 선물, 채원이가 어느덧 첫 번째 생일을 맞았습니다. 그동안 보내주신 따뜻한 사랑에 감사드리며, 소중한 분들과 함께 채원이의 첫걸음을 축복하는 자리를 마련했습니다.", eventDate: "2026. 10. 18 SUN", eventTime: "12:00 PM", venueName: "코트야드 메리어트 서울 명동\n3층 한양 1+2홀", venueAddress: "서울특별시 중구 남대문로 9", parkingInfo: "호텔 지하 주차장을 이용하실 수 있습니다. 행사 당일 주차 등록 및 세부 안내는 호텔 데스크에서 확인해 주세요.", heroImageUrl: null, galleryImageUrls: null, accountInfo: "강호성 | 카카오뱅크 3333-19-8058955" };
 
 function Section({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
@@ -72,7 +76,17 @@ export default function Home() {
       <div className="hero-scroll"><span>SCROLL TO CELEBRATE</span><b>↓</b></div>
     </section>
 
-    <Section label="INVITATION" className="invitation-letter"><div className="monogram"><b>CW</b><small>ONE</small></div><h2>사랑을 담아<br /><em>초대합니다</em></h2><p>{invite.greeting}</p><div className="parents">아빠 <b>{invite.fatherName}</b><i /> 엄마 <b>{invite.motherName}</b></div></Section>
+    <Section label="INVITATION" className="invitation-letter">
+      <div className="monogram"><b>CW</b><small>ONE</small></div>
+      <h2>사랑을 담아<br /><em>초대합니다</em></h2>
+      <p>{invite.greeting}</p>
+      <div className="parents">아빠 <b>{invite.fatherName}</b><i /> 엄마 <b>{invite.motherName}</b></div>
+      <div className="main-family-collage" aria-label="채원이 가족 사진">
+        <figure className="main-collage-left"><img src={FAMILY_PHOTO_LEFT} alt="엄마 아빠와 함께 있는 채원이" loading="lazy" /></figure>
+        <figure className="main-collage-center"><img src={FAMILY_PHOTO_CENTER} alt="엄마 아빠가 채원이를 안고 있는 가족 사진" loading="lazy" /></figure>
+        <figure className="main-collage-right"><img src={FAMILY_PHOTO_RIGHT} alt="회색 스와들을 입은 채원이" loading="lazy" /></figure>
+      </div>
+    </Section>
 
     <section className="love-transition"><img src={HERO_IMAGE} alt="채원이의 첫돌을 위한 축하 테이블" /><div><p>A year of love,</p><strong>a lifetime of joy.</strong></div></section>
 
