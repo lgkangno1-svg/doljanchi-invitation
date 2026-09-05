@@ -10,16 +10,28 @@ export type RsvpTelegramPayload = {
   note?: string | null;
 };
 
-async function readTelegramToken(): Promise<string> {
-  const direct = process.env.TELEGRAM_BOT_TOKEN?.trim();
+async function readSecret(directValue: string | undefined, filePath: string): Promise<string> {
+  const direct = directValue?.trim();
   if (direct) return direct;
-
-  const tokenFile = process.env.TELEGRAM_BOT_TOKEN_FILE?.trim() || "/run/secrets/telegram_bot_token";
   try {
-    return (await readFile(tokenFile, "utf8")).trim();
+    return (await readFile(filePath, "utf8")).trim();
   } catch {
     return "";
   }
+}
+
+async function readTelegramToken(): Promise<string> {
+  return readSecret(
+    process.env.TELEGRAM_BOT_TOKEN,
+    process.env.TELEGRAM_BOT_TOKEN_FILE?.trim() || "/run/secrets/telegram_bot_token",
+  );
+}
+
+async function readTelegramChatId(): Promise<string> {
+  return readSecret(
+    process.env.TELEGRAM_CHAT_ID,
+    process.env.TELEGRAM_CHAT_ID_FILE?.trim() || "/run/secrets/telegram_chat_id",
+  );
 }
 
 function sourceLabel(note?: string | null): string {
@@ -27,8 +39,7 @@ function sourceLabel(note?: string | null): string {
 }
 
 export async function notifyRsvpTelegram(payload: RsvpTelegramPayload): Promise<boolean> {
-  const token = await readTelegramToken();
-  const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
+  const [token, chatId] = await Promise.all([readTelegramToken(), readTelegramChatId()]);
 
   if (!token || !chatId) {
     console.warn("[rsvp-telegram] Telegram configuration is missing; RSVP was saved without notification.");
