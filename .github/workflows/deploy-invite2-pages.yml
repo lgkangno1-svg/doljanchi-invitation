@@ -1,0 +1,106 @@
+name: Deploy Invite2 to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'invite2/**'
+      - '.github/workflows/deploy-invite2-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-invite2-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CF_TOKEN_PRIMARY: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CF_TOKEN_ALT: ${{ secrets.CF_API_TOKEN }}
+      CF_ACCOUNT_PRIMARY: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CF_ACCOUNT_ALT: ${{ secrets.CF_ACCOUNT_ID }}
+      CF_PROJECT_SECRET: ${{ secrets.CLOUDFLARE_PAGES_PROJECT }}
+    steps:
+      - name: Checkout latest invite2 source
+        uses: actions/checkout@v4
+
+      - name: Resolve Cloudflare credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          token="${CF_TOKEN_PRIMARY:-${CF_TOKEN_ALT:-}}"
+          account="${CF_ACCOUNT_PRIMARY:-${CF_ACCOUNT_ALT:-}}"
+          if [[ -z "$token" ]]; then
+            echo '::error::No Cloudflare API token is configured in repository Actions secrets (checked CLOUDFLARE_API_TOKEN and CF_API_TOKEN).'
+            exit 2
+          fi
+          echo "CLOUDFLARE_API_TOKEN=$token" >> "$GITHUB_ENV"
+          if [[ -n "$account" ]]; then
+            echo "CLOUDFLARE_ACCOUNT_ID=$account" >> "$GITHUB_ENV"
+          fi
+          echo 'Cloudflare token is configured.'
+
+      - name: Discover Pages project
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${CF_PROJECT_SECRET:-}" ]]; then
+            project="$CF_PROJECT_SECRET"
+          else
+            npx --yes wrangler@4 pages project list > "$RUNNER_TEMP/pages-projects.txt"
+            echo 'Available Pages projects:'
+            sed -E 's/[A-Za-z0-9_-]{40,}/[REDACTED]/g' "$RUNNER_TEMP/pages-projects.txt"
+            project="$(awk 'BEGIN{IGNORECASE=1} /invite2\.avocadoss\.co\.kr/ {gsub(/^[[:space:]│|]+|[[:space:]│|]+$/,""); split($0,a,/│|\|/); gsub(/^[[:space:]]+|[[:space:]]+$/,"",a[1]); print a[1]; exit}' "$RUNNER_TEMP/pages-projects.txt")"
+            if [[ -z "$project" ]]; then
+              project="$(awk 'BEGIN{IGNORECASE=1} /(^|[[:space:]│|])invite2([[:space:]│|]|$)/ {gsub(/^[[:space:]│|]+|[[:space:]│|]+$/,""); split($0,a,/│|\|/); gsub(/^[[:space:]]+|[[:space:]]+$/,"",a[1]); print a[1]; exit}' "$RUNNER_TEMP/pages-projects.txt")"
+            fi
+          fi
+          if [[ -z "${project:-}" ]]; then
+            echo '::error::Could not identify the Cloudflare Pages project for invite2.avocadoss.co.kr.'
+            exit 3
+          fi
+          echo "CF_PAGES_PROJECT=$project" >> "$GITHUB_ENV"
+          echo "Resolved Pages project: $project"
+
+      - name: Validate invite2 source markers
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f invite2/index.html
+          test -f invite2/styles.css
+          test -f invite2/app.js
+          grep -F 'invitation-collage' invite2/index.html
+          grep -F '아들</span><strong>강호성' invite2/index.html
+          grep -F '며느리</span><strong>홍주은' invite2/index.html
+          grep -F '손녀</span><strong>강채원' invite2/index.html
+
+      - name: Deploy invite2 directory to Cloudflare Pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@4 pages deploy invite2 \
+            --project-name "$CF_PAGES_PROJECT" \
+            --branch main \
+            --commit-hash "$GITHUB_SHA" \
+            --commit-message "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}"
+
+      - name: Verify production domain updated
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6; do
+            body="$(curl -fsSL --max-time 20 'https://invite2.avocadoss.co.kr/?deploy_check='"$GITHUB_SHA" || true)"
+            if grep -q 'invitation-collage' <<<"$body" && ! grep -q '저희에게 찾아온 가장 빛나는 선물' <<<"$body"; then
+              echo "✅ invite2 production verified on attempt $attempt"
+              exit 0
+            fi
+            echo "Production not updated yet; retry $attempt/6"
+            sleep 10
+          done
+          echo '::error::Cloudflare deployment command completed, but production verification did not observe the new collage markup.'
+          exit 4
