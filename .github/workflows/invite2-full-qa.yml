@@ -36,7 +36,7 @@ jobs:
           import fs from 'node:fs';
 
           const base = 'https://invite2.avocadoss.co.kr/';
-          const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN, args: ['--no-sandbox'] });
+          const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN, args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
           const results = { url: base, checks: {}, console: [], requests: [], imageStates: [] };
           const fail = (name, detail) => { results.checks[name] = { pass: false, detail }; };
           const pass = (name, detail='ok') => { results.checks[name] = { pass: true, detail }; };
@@ -61,6 +61,13 @@ jobs:
             const finalUrl = page.url();
             if (response?.ok()) pass(`${name}:page-load`, `${response.status()} ${finalUrl}`); else fail(`${name}:page-load`, `${response?.status()} ${finalUrl}`);
 
+            const dimensions = await page.evaluate(() => ({
+              scrollWidth: document.documentElement.scrollWidth,
+              clientWidth: document.documentElement.clientWidth,
+              bodyScrollWidth: document.body.scrollWidth
+            }));
+            if (dimensions.scrollWidth <= viewport.width + 1 && dimensions.bodyScrollWidth <= viewport.width + 1) pass(`${name}:no-horizontal-overflow`, JSON.stringify(dimensions)); else fail(`${name}:no-horizontal-overflow`, JSON.stringify(dimensions));
+
             const shellWidth = await page.locator('.invitation-shell').evaluate(el => el.getBoundingClientRect().width);
             if (shellWidth <= Math.min(viewport.width, 561) && shellWidth > 300) pass(`${name}:shell-width`, `${shellWidth}px`); else fail(`${name}:shell-width`, `${shellWidth}px`);
 
@@ -74,6 +81,10 @@ jobs:
 
             const collageCount = await page.locator('.invitation-collage').count();
             if (collageCount === 1) pass(`${name}:single-collage`, '1'); else fail(`${name}:single-collage`, String(collageCount));
+
+            const collageBox = await page.locator('.invitation-collage').boundingBox();
+            const shellBox = await page.locator('.invitation-shell').boundingBox();
+            if (collageBox && shellBox && collageBox.x >= shellBox.x - 1 && collageBox.x + collageBox.width <= shellBox.x + shellBox.width + 1) pass(`${name}:collage-not-clipped`); else fail(`${name}:collage-not-clipped`, JSON.stringify({collageBox,shellBox}));
 
             const familyText = await page.locator('.family-card-v2').innerText().catch(() => '');
             if (familyText.includes('강호성') && familyText.includes('홍주은') && familyText.includes('강채원')) pass(`${name}:family-names`); else fail(`${name}:family-names`, familyText);
@@ -105,10 +116,29 @@ jobs:
             const toastText = await page.locator('#toast').innerText().catch(()=>'');
             if (toastText.includes('계좌번호')) pass(`${name}:account-copy`, toastText); else fail(`${name}:account-copy`, toastText);
 
+            const map = page.locator('iframe.map');
             const naver = await page.locator('.map-actions a').first().getAttribute('href');
             const kakao = await page.locator('.map-actions a').nth(1).getAttribute('href');
             if (naver?.includes('map.naver.com') && kakao?.includes('map.kakao.com')) pass(`${name}:map-links`); else fail(`${name}:map-links`, `${naver} | ${kakao}`);
-            if (await page.locator('iframe.map').count() === 1) pass(`${name}:map-frame`); else fail(`${name}:map-frame`);
+            if (await map.count() === 1) pass(`${name}:map-frame`); else fail(`${name}:map-frame`);
+            await map.scrollIntoViewIfNeeded();
+            await page.waitForTimeout(2200);
+            const mapSrc = await map.getAttribute('src');
+            const mapFrame = page.frames().find(f => /google\.(com|co\.)|maps\.google/.test(f.url()));
+            if (mapSrc?.includes('maps.google.com') && mapFrame && mapFrame.url() !== 'about:blank') pass(`${name}:map-loaded`, mapFrame.url().slice(0,160)); else fail(`${name}:map-loaded`, JSON.stringify({mapSrc,frames:page.frames().map(f=>f.url())}));
+
+            const music = page.locator('#music-button');
+            await music.click();
+            await page.waitForTimeout(500);
+            const musicText = await music.innerText();
+            if (musicText === '정지') {
+              pass(`${name}:music-toggle`, 'playing state reached');
+              await music.click();
+              await page.waitForTimeout(150);
+              if ((await music.innerText()) === '음악') pass(`${name}:music-stop`); else fail(`${name}:music-stop`, await music.innerText());
+            } else {
+              fail(`${name}:music-toggle`, `button=${musicText}`);
+            }
 
             const cssLoaded = await page.evaluate(() => [...document.styleSheets].some(s => s.href && s.href.includes('/styles.css')) && [...document.styleSheets].some(s => s.href && s.href.includes('/invite2-hotfix.css')));
             if (cssLoaded) pass(`${name}:stylesheets-attached`); else fail(`${name}:stylesheets-attached`);
@@ -116,6 +146,8 @@ jobs:
             if (consoleIssues.length === 0) pass(`${name}:console-health`); else fail(`${name}:console-health`, consoleIssues.join(' || '));
             results.console.push(...consoleIssues.map(x => ({ name, message: x })));
 
+            await page.evaluate(() => scrollTo(0, 0));
+            await page.waitForTimeout(150);
             await page.screenshot({ path: screenshot, fullPage: true });
             await context.close();
           }
