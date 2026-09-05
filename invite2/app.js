@@ -8,6 +8,63 @@ function showToast(message) {
   toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
 }
 
+// 초대 문구 본문 대신 가족 사진 콜라주를 배치합니다.
+(async () => {
+  const letter = document.querySelector('.invitation-letter');
+  if (!letter) return;
+
+  const bodyCopy = letter.querySelector('.body-copy');
+  if (bodyCopy) bodyCopy.remove();
+
+  const familyCard = letter.querySelector('.family-card');
+  if (!familyCard || letter.querySelector('.invitation-collage-wrap')) return;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'invitation-collage-wrap';
+  const image = document.createElement('img');
+  image.className = 'invitation-collage';
+  image.alt = '채원이와 가족의 따뜻한 순간을 담은 사진';
+  image.decoding = 'async';
+  wrap.appendChild(image);
+  familyCard.before(wrap);
+
+  const style = document.createElement('style');
+  style.textContent = `
+    .invitation-letter .invitation-collage-wrap {
+      width: min(100%, 520px);
+      margin: 30px auto 36px;
+    }
+    .invitation-letter .invitation-collage {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 14px;
+      box-shadow: 0 10px 28px rgba(79, 58, 43, .08);
+    }
+    @media (max-width: 420px) {
+      .invitation-letter .invitation-collage-wrap {
+        width: calc(100% + 12px);
+        margin-left: -6px;
+        margin-right: -6px;
+      }
+      .invitation-letter .invitation-collage {
+        border-radius: 10px;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+
+  try {
+    const response = await fetch('./assets/family-collage.b64.txt?v=20260905-family-collage-1', { cache: 'force-cache' });
+    if (!response.ok) throw new Error(`collage asset ${response.status}`);
+    const encoded = (await response.text()).trim();
+    image.src = `data:image/jpeg;base64,${encoded}`;
+  } catch (error) {
+    wrap.remove();
+    console.error('Failed to load invitation collage', error);
+  }
+})();
+
 // 계좌번호 복사
 document.querySelectorAll('.account-row').forEach(button => button.addEventListener('click', async () => {
   try {
