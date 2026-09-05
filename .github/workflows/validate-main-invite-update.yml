@@ -1,0 +1,59 @@
+name: Validate Main Invitation Update
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'client/src/pages/Home.tsx'
+      - 'client/src/main-family-collage.css'
+      - 'server/rsvpTelegram.ts'
+      - 'server/rsvpTelegram.test.ts'
+      - 'server/routers.ts'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.github/workflows/validate-main-invite-update.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: pnpm check
+      - name: Telegram notifier unit tests
+        run: pnpm exec vitest run server/rsvpTelegram.test.ts
+      - name: Preserve original invitation copy and verify collage markers
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F '저희에게 찾아온 가장 빛나는 선물, 채원이가 어느덧 첫 번째 생일을 맞았습니다.' client/src/pages/Home.tsx
+          grep -F '<p>{invite.greeting}</p>' client/src/pages/Home.tsx
+          grep -F 'className="parents"' client/src/pages/Home.tsx
+          grep -F 'className="main-family-collage"' client/src/pages/Home.tsx
+          grep -F 'chaewon-family-feeding.webp' client/src/pages/Home.tsx
+          grep -F 'chaewon-family-together.webp' client/src/pages/Home.tsx
+          grep -F 'chaewon-baby-swaddle.webp' client/src/pages/Home.tsx
+      - name: Build production Docker image
+        run: docker build -t doljanchi-invitation:qa .
+      - name: Verify embedded family photos in image
+        run: |
+          docker run --rm --entrypoint sh doljanchi-invitation:qa -c '
+            test -s /app/dist/public/manus-storage/chaewon-family-feeding.webp &&
+            test -s /app/dist/public/manus-storage/chaewon-family-together.webp &&
+            test -s /app/dist/public/manus-storage/chaewon-baby-swaddle.webp &&
+            test "$(head -c 4 /app/dist/public/manus-storage/chaewon-family-feeding.webp)" = RIFF &&
+            test "$(head -c 4 /app/dist/public/manus-storage/chaewon-family-together.webp)" = RIFF &&
+            test "$(head -c 4 /app/dist/public/manus-storage/chaewon-baby-swaddle.webp)" = RIFF
+          '
