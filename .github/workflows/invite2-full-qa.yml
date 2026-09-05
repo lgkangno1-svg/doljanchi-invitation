@@ -1,0 +1,151 @@
+name: Invite2 Full Production QA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/invite2-full-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Prepare QA runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/invite2-qa
+          cd /tmp/invite2-qa
+          npm init -y >/dev/null 2>&1
+          npm install --silent playwright-core@1.55.0
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
+          if [[ -z "$CHROME" ]]; then echo 'Chrome not found'; exit 2; fi
+          echo "CHROME_BIN=$CHROME" >> "$GITHUB_ENV"
+
+      - name: Run production browser QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/invite2-qa/audit.mjs <<'EOF'
+          import { chromium } from 'playwright-core';
+          import fs from 'node:fs';
+
+          const base = 'https://invite2.avocadoss.co.kr/';
+          const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN, args: ['--no-sandbox'] });
+          const results = { url: base, checks: {}, console: [], requests: [], imageStates: [] };
+          const fail = (name, detail) => { results.checks[name] = { pass: false, detail }; };
+          const pass = (name, detail='ok') => { results.checks[name] = { pass: true, detail }; };
+
+          async function auditViewport(name, viewport, screenshot) {
+            const context = await browser.newContext({ viewport, permissions: ['clipboard-read', 'clipboard-write'] });
+            const page = await context.newPage();
+            const consoleIssues = [];
+            page.on('console', msg => {
+              if (['error','warning'].includes(msg.type())) consoleIssues.push(`${msg.type()}: ${msg.text()}`);
+            });
+            page.on('pageerror', err => consoleIssues.push(`pageerror: ${err.message}`));
+            page.on('response', response => {
+              const url = response.url();
+              if (url.includes('invite2.avocadoss.co.kr') && (/styles\.css|invite2-hotfix\.css|app\.js/.test(url))) {
+                results.requests.push({ name, url, status: response.status(), contentType: response.headers()['content-type'] || '' });
+              }
+            });
+
+            const response = await page.goto(base + `?qa=${Date.now()}-${name}`, { waitUntil: 'networkidle', timeout: 45000 });
+            await page.waitForTimeout(1800);
+            const finalUrl = page.url();
+            if (response?.ok()) pass(`${name}:page-load`, `${response.status()} ${finalUrl}`); else fail(`${name}:page-load`, `${response?.status()} ${finalUrl}`);
+
+            const shellWidth = await page.locator('.invitation-shell').evaluate(el => el.getBoundingClientRect().width);
+            if (shellWidth <= Math.min(viewport.width, 561) && shellWidth > 300) pass(`${name}:shell-width`, `${shellWidth}px`); else fail(`${name}:shell-width`, `${shellWidth}px`);
+
+            const hero = page.locator('.hero-inner');
+            const heroVisible = await hero.isVisible();
+            const heroText = await hero.innerText().catch(() => '');
+            if (heroVisible && heroText.includes('강채원') && heroText.includes('2026. 10. 18')) pass(`${name}:hero-visible`); else fail(`${name}:hero-visible`, heroText);
+
+            const title = page.locator('.invitation-title');
+            if (await title.isVisible() && (await title.innerText()).includes('사랑을 담아')) pass(`${name}:invitation-title`); else fail(`${name}:invitation-title`);
+
+            const collageCount = await page.locator('.invitation-collage').count();
+            if (collageCount === 1) pass(`${name}:single-collage`, '1'); else fail(`${name}:single-collage`, String(collageCount));
+
+            const familyText = await page.locator('.family-card-v2').innerText().catch(() => '');
+            if (familyText.includes('강호성') && familyText.includes('홍주은') && familyText.includes('강채원')) pass(`${name}:family-names`); else fail(`${name}:family-names`, familyText);
+
+            const bodyText = await page.locator('body').innerText();
+            if (!bodyText.includes('저희에게 찾아온 가장 빛나는 선물')) pass(`${name}:old-copy-removed`); else fail(`${name}:old-copy-removed`);
+            if (bodyText.includes('늦어도 10월초 까지 참석여부 부탁합니다')) pass(`${name}:deadline-copy`); else fail(`${name}:deadline-copy`);
+            if (bodyText.includes('국민 068-21-0568-486') && bodyText.includes('우리 1002-157-198437')) pass(`${name}:accounts`); else fail(`${name}:accounts`);
+            if (bodyText.includes('코트야드 메리어트 서울 명동') && bodyText.includes('3층 한양 1+2홀')) pass(`${name}:venue`); else fail(`${name}:venue`);
+
+            const images = page.locator('img');
+            const imageCount = await images.count();
+            let broken = 0;
+            for (let i=0; i<imageCount; i++) {
+              const state = await images.nth(i).evaluate(img => ({ src: img.currentSrc || img.src, complete: img.complete, naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight }));
+              results.imageStates.push({ name, ...state });
+              if (!state.complete || state.naturalWidth <= 0) broken++;
+            }
+            if (broken === 0) pass(`${name}:images-loaded`, `${imageCount}/${imageCount}`); else fail(`${name}:images-loaded`, `${broken} broken of ${imageCount}`);
+
+            const modal = page.locator('#share-modal');
+            await page.locator('#share-button').click();
+            if (await modal.isVisible()) pass(`${name}:share-open`); else fail(`${name}:share-open`);
+            await page.locator('#share-close').click();
+            if (!(await modal.isVisible())) pass(`${name}:share-close`); else fail(`${name}:share-close`);
+
+            await page.locator('.account-row').first().click();
+            await page.waitForTimeout(250);
+            const toastText = await page.locator('#toast').innerText().catch(()=>'');
+            if (toastText.includes('계좌번호')) pass(`${name}:account-copy`, toastText); else fail(`${name}:account-copy`, toastText);
+
+            const naver = await page.locator('.map-actions a').first().getAttribute('href');
+            const kakao = await page.locator('.map-actions a').nth(1).getAttribute('href');
+            if (naver?.includes('map.naver.com') && kakao?.includes('map.kakao.com')) pass(`${name}:map-links`); else fail(`${name}:map-links`, `${naver} | ${kakao}`);
+            if (await page.locator('iframe.map').count() === 1) pass(`${name}:map-frame`); else fail(`${name}:map-frame`);
+
+            const cssLoaded = await page.evaluate(() => [...document.styleSheets].some(s => s.href && s.href.includes('/styles.css')) && [...document.styleSheets].some(s => s.href && s.href.includes('/invite2-hotfix.css')));
+            if (cssLoaded) pass(`${name}:stylesheets-attached`); else fail(`${name}:stylesheets-attached`);
+
+            if (consoleIssues.length === 0) pass(`${name}:console-health`); else fail(`${name}:console-health`, consoleIssues.join(' || '));
+            results.console.push(...consoleIssues.map(x => ({ name, message: x })));
+
+            await page.screenshot({ path: screenshot, fullPage: true });
+            await context.close();
+          }
+
+          await auditViewport('mobile', { width: 390, height: 844 }, '/tmp/invite2-qa/mobile-full.png');
+          await auditViewport('desktop', { width: 1440, height: 1000 }, '/tmp/invite2-qa/desktop-full.png');
+
+          const expectedAssets = results.requests.filter(r => /styles\.css|invite2-hotfix\.css|app\.js/.test(r.url));
+          const badAssets = expectedAssets.filter(r => r.status !== 200 || (r.url.includes('.css') && !r.contentType.includes('text/css')) || (r.url.includes('.js') && !r.contentType.includes('javascript')));
+          if (expectedAssets.length >= 6 && badAssets.length === 0) pass('assets:http-and-mime', `${expectedAssets.length} responses ok`); else fail('assets:http-and-mime', JSON.stringify(badAssets));
+
+          await browser.close();
+          fs.writeFileSync('/tmp/invite2-qa/audit.json', JSON.stringify(results, null, 2));
+          const failed = Object.entries(results.checks).filter(([,v]) => !v.pass);
+          console.log(JSON.stringify(results.checks, null, 2));
+          if (failed.length) {
+            console.error(`FAILED_CHECKS=${failed.map(([k])=>k).join(',')}`);
+            process.exit(1);
+          }
+          EOF
+          cd /tmp/invite2-qa
+          node audit.mjs
+
+      - name: Upload QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invite2-full-production-qa
+          path: |
+            /tmp/invite2-qa/audit.json
+            /tmp/invite2-qa/mobile-full.png
+            /tmp/invite2-qa/desktop-full.png
+          retention-days: 2
