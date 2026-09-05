@@ -1,0 +1,115 @@
+name: Invite2 MiniPC Routing Probe
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/invite2-minipc-routing-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: invite2-minipc-routing-probe
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check MiniPC SSH configuration
+        id: cfg
+        env:
+          HOST: ${{ secrets.MINIPC_HOST }}
+          USER: ${{ secrets.MINIPC_USER }}
+          KEY: ${{ secrets.MINIPC_SSH_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "$HOST" && -n "$USER" && -n "$KEY" ]]; then
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+            echo 'MiniPC SSH credentials: configured'
+          else
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            echo '::error::MiniPC SSH credentials are not configured.'
+            exit 2
+          fi
+
+      - name: Probe MiniPC routing without changing services
+        if: steps.cfg.outputs.ready == 'true'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.MINIPC_HOST }}
+          username: ${{ secrets.MINIPC_USER }}
+          key: ${{ secrets.MINIPC_SSH_KEY }}
+          port: ${{ secrets.MINIPC_PORT || 22 }}
+          command_timeout: 6m
+          script: |
+            set +e
+            redact(){ sed -E 's/token[ =:][A-Za-z0-9._-]+/token=[REDACTED]/Ig; s/eyJ[A-Za-z0-9._-]+/[REDACTED_JWT]/g; s#(/home/)[^/]+/#\1[USER]/#g'; }
+            echo '=== INVITE2 MINIPC ROUTING PROBE ==='
+            echo "hostname=$(hostname)"
+            echo "user=$(id -un)"
+            echo
+            echo '=== DOCKER ==='
+            docker ps --format 'name={{.Names}} image={{.Image}} ports={{.Ports}}' 2>&1 | redact
+            echo
+            echo '=== COMPOSE PROJECTS ==='
+            docker compose ls 2>&1 | redact
+            echo
+            echo '=== CLOUDFLARED PROCESSES ==='
+            ps -ef | grep '[c]loudflared' | redact
+            echo
+            echo '=== CLOUDFLARED FILES ==='
+            for base in "$HOME/.cloudflared" /etc/cloudflared /usr/local/etc/cloudflared; do
+              if [[ -d "$base" ]]; then
+                echo "dir=$base" | redact
+                find "$base" -maxdepth 2 -type f -printf '%p\n' 2>/dev/null | redact | head -n 40
+              fi
+            done
+            echo
+            echo '=== CLOUDFLARED CONFIG SAFE FIELDS ==='
+            for f in "$HOME/.cloudflared/config.yml" "$HOME/.cloudflared/config.yaml" /etc/cloudflared/config.yml /etc/cloudflared/config.yaml; do
+              if [[ -r "$f" ]]; then
+                echo "file=$f" | redact
+                grep -E '^[[:space:]]*(tunnel:|credentials-file:|hostname:|service:|- hostname:|originRequest:)' "$f" 2>/dev/null | redact | head -n 100
+              fi
+            done
+            echo
+            echo '=== REVERSE PROXY CONFIG REFERENCES ==='
+            for base in /etc/nginx /etc/caddy /etc/traefik "$HOME" /opt /srv; do
+              [[ -e "$base" ]] || continue
+              grep -RIn --binary-files=without-match --exclude='*.log' --exclude='*.db' --exclude='*.sqlite*' -E 'invite\.avocadoss\.co\.kr|invite2\.avocadoss\.co\.kr|avocadoss\.co\.kr' "$base" 2>/dev/null | redact | head -n 120
+            done
+            echo
+            echo '=== LISTENERS ==='
+            ss -ltnp 2>/dev/null | redact | head -n 120
+            echo
+            echo '=== HOST-HEADER LOCAL PROBES ==='
+            ports="$(ss -ltnH 2>/dev/null | awk '{split($4,a,":"); p=a[length(a)]; if (p ~ /^[0-9]+$/ && p>=1024) print p}' | sort -nu | head -n 80)"
+            for p in $ports; do
+              for host in invite.avocadoss.co.kr invite2.avocadoss.co.kr; do
+                body="$(curl -sS --max-time 1 -H "Host: $host" "http://127.0.0.1:$p/" 2>/dev/null | head -c 200000)"
+                [[ -n "$body" ]] || continue
+                if grep -q -E '강채원|FIRST BIRTHDAY|invitation-collage|저희에게 찾아온 가장 빛나는 선물' <<<"$body"; then
+                  old=no; collage=no
+                  grep -q '저희에게 찾아온 가장 빛나는 선물' <<<"$body" && old=yes
+                  grep -q 'invitation-collage' <<<"$body" && collage=yes
+                  echo "host=$host port=$p match=yes old=$old collage=$collage"
+                fi
+              done
+            done
+            echo
+            echo '=== CLOUDFLARE CLI CAPABILITY ==='
+            if command -v cloudflared >/dev/null 2>&1; then
+              cloudflared --version 2>&1 | redact
+              if [[ -f "$HOME/.cloudflared/cert.pem" || -f /etc/cloudflared/cert.pem ]]; then
+                echo 'account_cert_present=yes'
+              else
+                echo 'account_cert_present=no'
+              fi
+            else
+              echo 'cloudflared_cli=not-found'
+            fi
