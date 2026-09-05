@@ -8,6 +8,49 @@ function showToast(message) {
   toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
 }
 
+// Invitation photo collage: replaces the body copy under the title while preserving the family card.
+(() => {
+  const letter = document.querySelector('.invitation-letter');
+  if (!letter) return;
+
+  const bodyCopy = letter.querySelector('.body-copy');
+  if (bodyCopy) bodyCopy.remove();
+
+  const familyCard = letter.querySelector('.family-card');
+  if (!familyCard || letter.querySelector('.invitation-collage-wrap')) return;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'invitation-collage-wrap';
+  wrap.innerHTML = `<img class="invitation-collage" src="data:image/webp;base64,UklGRp6/AA..." alt="채원이와 가족의 따뜻한 순간을 담은 사진" />`;
+  familyCard.before(wrap);
+
+  const style = document.createElement('style');
+  style.textContent = `
+    .invitation-letter .invitation-collage-wrap {
+      width: min(100%, 900px);
+      margin: 34px auto 38px;
+      padding: 0;
+    }
+    .invitation-letter .invitation-collage {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 18px;
+      box-shadow: 0 12px 34px rgba(79, 58, 43, .08);
+    }
+    @media (max-width: 640px) {
+      .invitation-letter .invitation-collage-wrap {
+        margin: 28px -10px 34px;
+        width: calc(100% + 20px);
+      }
+      .invitation-letter .invitation-collage {
+        border-radius: 12px;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
 // 계좌번호 복사
 document.querySelectorAll('.account-row').forEach(button => button.addEventListener('click', async () => {
   try {
@@ -88,7 +131,6 @@ if (shareKakao) {
       url: shareUrl
     };
 
-    // 모바일 네이티브 공유 창 (카카오톡 최우선 선택 가능)
     if (navigator.share) {
       try {
         await navigator.share(shareData);
@@ -98,7 +140,6 @@ if (shareKakao) {
       }
     }
 
-    // fallback: 카카오톡 웹 공유 URL 또는 클립보드 복사
     try {
       await navigator.clipboard.writeText(shareUrl);
       showToast('초대장 주소를 복사했습니다. 카카오톡에 붙여넣어 주세요.');
