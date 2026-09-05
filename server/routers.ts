@@ -8,6 +8,7 @@ import { storagePut } from "./storage";
 import { safeMediaFileName, validateMediaUpload } from "./media";
 import { TRPCError } from "@trpc/server";
 import { ADMIN_SESSION_COOKIE, administratorCookieOptions, createAdministratorSession, verifyAdministratorCredentials } from "./adminSession";
+import { notifyRsvpTelegram } from "./rsvpTelegram";
 
 const invitationInput = z.object({
   babyName: z.string().trim().min(1).max(80), fatherName: z.string().trim().min(1).max(120), motherName: z.string().trim().min(1).max(120), invitationTitle: z.string().trim().min(1).max(180), greeting: z.string().trim().min(1).max(2000),
@@ -35,7 +36,40 @@ export const appRouter = router({
     get: publicProcedure.input(z.object({ slug: z.string().trim().min(8).max(96) })).query(({ input }) => db.getOrCreateInvitation(input.slug)),
     guestbook: publicProcedure.input(z.object({ slug: z.string().trim().min(8).max(96) })).query(async ({ input }) => { const invite = await db.getOrCreateInvitation(input.slug); return db.listGuestbook(invite.id); }),
     addGuestbook: publicProcedure.input(z.object({ name: z.string().trim().min(1, "이름을 입력해 주세요.").max(40), companionNames: z.array(z.string().trim().min(1).max(40)).max(9).default([]), message: z.string().trim().min(1, "축하 메시지를 입력해 주세요.").max(300), website: z.string().max(0).optional() })).mutation(async ({ input }) => { if (input.website) throw new Error("Spam blocked"); const invite = await db.getOrCreateInvitation(); if (!db.canSubmitGuestbook(`${invite.slug}:${input.name}`)) throw new Error("잠시 후 다시 시도해 주세요."); return db.createGuestbook(invite.id, input.name, input.message, input.companionNames); }),
-    addRsvp: publicProcedure.input(z.object({ name: z.string().trim().min(1).max(80), companionNames: z.array(z.string().trim().min(1).max(80)).max(19).default([]), attendeeDetails: z.array(rsvpAttendeeInput).max(20).default([]), attendance: z.enum(["attending", "unable"]), adults: z.number().int().min(0).max(20), children: z.number().int().min(0).max(20), meal: z.boolean().optional(), contact: z.string().trim().max(40).optional(), note: z.string().trim().max(300).optional() })).mutation(async ({ input }) => { const invite = await db.getOrCreateInvitation(); const details = input.attendeeDetails; const hasDetails = details.length > 0; return db.createRsvp({ ...input, invitationId: invite.id, name: details[0]?.name ?? input.name, companionNames: JSON.stringify(hasDetails ? details.slice(1).map(attendee => attendee.name) : input.companionNames), attendeeDetails: JSON.stringify(details), adults: hasDetails ? details.filter(attendee => attendee.ageGroup === "over12").length : input.adults, children: hasDetails ? details.filter(attendee => attendee.ageGroup === "under12").length : input.children, meal: input.meal === false ? 0 : 1, contact: input.contact || null, note: input.note || null }); }),
+    addRsvp: publicProcedure.input(z.object({ name: z.string().trim().min(1).max(80), companionNames: z.array(z.string().trim().min(1).max(80)).max(19).default([]), attendeeDetails: z.array(rsvpAttendeeInput).max(20).default([]), attendance: z.enum(["attending", "unable"]), adults: z.number().int().min(0).max(20), children: z.number().int().min(0).max(20), meal: z.boolean().optional(), contact: z.string().trim().max(40).optional(), note: z.string().trim().max(300).optional() })).mutation(async ({ input }) => {
+      const invite = await db.getOrCreateInvitation();
+      const details = input.attendeeDetails;
+      const hasDetails = details.length > 0;
+      const name = details[0]?.name ?? input.name;
+      const companionNames = hasDetails ? details.slice(1).map(attendee => attendee.name) : input.companionNames;
+      const adults = hasDetails ? details.filter(attendee => attendee.ageGroup === "over12").length : input.adults;
+      const children = hasDetails ? details.filter(attendee => attendee.ageGroup === "under12").length : input.children;
+
+      const saved = await db.createRsvp({
+        ...input,
+        invitationId: invite.id,
+        name,
+        companionNames: JSON.stringify(companionNames),
+        attendeeDetails: JSON.stringify(details),
+        adults,
+        children,
+        meal: input.meal === false ? 0 : 1,
+        contact: input.contact || null,
+        note: input.note || null,
+      });
+
+      await notifyRsvpTelegram({
+        name,
+        companionNames,
+        attendance: input.attendance,
+        adults,
+        children,
+        contact: input.contact || null,
+        note: input.note || null,
+      });
+
+      return saved;
+    }),
   }),
   admin: router({
     dashboard: adminProcedure.query(async () => { const invite = await db.getOrCreateInvitation(); const [guestbook, rsvps] = await Promise.all([db.listAllGuestbook(invite.id), db.listRsvp(invite.id)]); return { invitation: invite, guestbook, rsvps }; }),
