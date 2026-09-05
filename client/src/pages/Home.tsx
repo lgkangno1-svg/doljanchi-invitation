@@ -120,12 +120,12 @@ export default function Home() {
       </form>
 
       <div className="message-list">
-        {guestbook.data?.map(message => <article key={message.id}><div className="message-topline"><div><span><PartyNameLabel primaryName={message.name} companionNames={message.companionNames} /></span><time>{new Date(message.createdAt).toLocaleDateString("ko-KR")}</time></div></div><p>{message.message}</p></article>)}
+        {guestbook.data?.map(message => <article key={message.id}><div className="message-topline"><div><span><PartyNameLabel primaryName={message.authorName} companionNames={message.companionNames} /></span><time>{new Date(message.createdAt).toLocaleDateString("ko-KR")}</time></div></div><p>{message.message}</p></article>)}
         {guestbook.data?.length === 0 && <p className="empty-message">첫 번째 축하 메시지를 남겨주세요.</p>}
       </div>
     </Section>
 
-    <Section label="FOR YOUR HEART" className="account-hotel"><AccountSection accounts={accounts} onCopy={copyAccount} /></Section>
+    <Section label="FOR YOUR HEART" className="account-hotel"><AccountSection accounts={accounts} copyAccount={copyAccount} /></Section>
 
     <section className="hotel-closing"><div className="closing-ribbon">⌇</div><span>WITH LOVE,</span><h2>채원이의<br /><em>첫 번째 생일</em></h2><p>함께해 주시는 모든 분들께<br />진심으로 감사드립니다.</p><div className="closing-date"><b>2026</b><i>10 · 18</i></div></section>
 
