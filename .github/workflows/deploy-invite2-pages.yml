@@ -67,17 +67,25 @@ jobs:
           echo "CF_PAGES_PROJECT=$project" >> "$GITHUB_ENV"
           echo "Resolved Pages project: $project"
 
-      - name: Validate invite2 source markers
+      - name: Validate invite2 source markers and asset paths
         shell: bash
         run: |
           set -euo pipefail
           test -f invite2/index.html
           test -f invite2/styles.css
+          test -f invite2/invite2-hotfix.css
           test -f invite2/app.js
           grep -F 'invitation-collage' invite2/index.html
           grep -F '아들</span><strong>강호성' invite2/index.html
           grep -F '며느리</span><strong>홍주은' invite2/index.html
           grep -F '손녀</span><strong>강채원' invite2/index.html
+          grep -E 'href="/styles\.css\?v=' invite2/index.html
+          grep -E 'href="/invite2-hotfix\.css\?v=' invite2/index.html
+          grep -E 'src="/app\.js\?v=' invite2/index.html
+          if grep -Eq '(href|src)="\./(styles\.css|invite2-hotfix\.css|app\.js)' invite2/index.html; then
+            echo '::error::Relative production asset path detected. Root domain redirects to /invite/... so assets must use absolute / paths.'
+            exit 5
+          fi
 
       - name: Deploy invite2 directory to Cloudflare Pages
         shell: bash
@@ -89,18 +97,33 @@ jobs:
             --commit-hash "$GITHUB_SHA" \
             --commit-message "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}"
 
-      - name: Verify production domain updated
+      - name: Verify production content and assets
         shell: bash
         run: |
           set -euo pipefail
+          base='https://invite2.avocadoss.co.kr'
           for attempt in 1 2 3 4 5 6; do
-            body="$(curl -fsSL --max-time 20 'https://invite2.avocadoss.co.kr/?deploy_check='"$GITHUB_SHA" || true)"
-            if grep -q 'invitation-collage' <<<"$body" && ! grep -q '저희에게 찾아온 가장 빛나는 선물' <<<"$body"; then
-              echo "✅ invite2 production verified on attempt $attempt"
-              exit 0
+            body="$(curl -fsSL --max-time 20 "$base/?deploy_check=$GITHUB_SHA" || true)"
+            if grep -q 'invitation-collage' <<<"$body" \
+              && ! grep -q '저희에게 찾아온 가장 빛나는 선물' <<<"$body" \
+              && grep -q 'href="/styles.css?v=' <<<"$body" \
+              && grep -q 'href="/invite2-hotfix.css?v=' <<<"$body" \
+              && grep -q 'src="/app.js?v=' <<<"$body"; then
+              echo "Production HTML verified on attempt $attempt"
+              break
+            fi
+            if [[ "$attempt" == 6 ]]; then
+              echo '::error::Production HTML did not update to the expected absolute-asset version.'
+              exit 4
             fi
             echo "Production not updated yet; retry $attempt/6"
             sleep 10
           done
-          echo '::error::Cloudflare deployment command completed, but production verification did not observe the new collage markup.'
-          exit 4
+
+          css_type="$(curl -fsSI --max-time 20 "$base/styles.css?verify=$GITHUB_SHA" | tr -d '\r' | awk 'BEGIN{IGNORECASE=1} /^content-type:/ {print tolower($0); exit}')"
+          hotfix_type="$(curl -fsSI --max-time 20 "$base/invite2-hotfix.css?verify=$GITHUB_SHA" | tr -d '\r' | awk 'BEGIN{IGNORECASE=1} /^content-type:/ {print tolower($0); exit}')"
+          js_type="$(curl -fsSI --max-time 20 "$base/app.js?verify=$GITHUB_SHA" | tr -d '\r' | awk 'BEGIN{IGNORECASE=1} /^content-type:/ {print tolower($0); exit}')"
+          [[ "$css_type" == *'text/css'* ]] || { echo "::error::styles.css MIME invalid: $css_type"; exit 6; }
+          [[ "$hotfix_type" == *'text/css'* ]] || { echo "::error::invite2-hotfix.css MIME invalid: $hotfix_type"; exit 7; }
+          [[ "$js_type" == *'javascript'* ]] || { echo "::error::app.js MIME invalid: $js_type"; exit 8; }
+          echo '✅ invite2 production HTML and asset MIME verification passed.'
