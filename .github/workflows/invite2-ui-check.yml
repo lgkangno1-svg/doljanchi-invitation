@@ -31,7 +31,7 @@ jobs:
           grep -q 'Invitation section reference layout' /tmp/invite2-check/styles.css
           grep -qi '^content-type: text/css' /tmp/invite2-check/styles.headers
 
-      - name: Capture mobile screenshot
+      - name: Capture mobile screenshots
         shell: bash
         run: |
           set -euo pipefail
@@ -43,9 +43,14 @@ jobs:
           "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
             --window-size=390,844 --virtual-time-budget=8000 \
             --screenshot=/tmp/invite2-check/mobile.png \
-            'https://invite2.avocadoss.co.kr/?ui_check=2'
+            'https://invite2.avocadoss.co.kr/?ui_check=3'
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
+            --window-size=390,5000 --virtual-time-budget=8000 \
+            --screenshot=/tmp/invite2-check/mobile-tall.png \
+            'https://invite2.avocadoss.co.kr/?ui_check=3'
           test -s /tmp/invite2-check/mobile.png
-          ls -lh /tmp/invite2-check/mobile.png
+          test -s /tmp/invite2-check/mobile-tall.png
+          ls -lh /tmp/invite2-check/mobile*.png
 
       - name: Upload diagnostics
         uses: actions/upload-artifact@v4
