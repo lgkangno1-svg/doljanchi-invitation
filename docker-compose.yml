@@ -7,8 +7,11 @@ services:
       - "3001:3000"
     env_file:
       - .env
+    environment:
+      TELEGRAM_BOT_TOKEN_FILE: /run/secrets/telegram_bot_token
     volumes:
       - media_data:/app/media
+      - ${TELEGRAM_BOT_TOKEN_FILE_HOST:-/dev/null}:/run/secrets/telegram_bot_token:ro
     networks:
       - default
       - avocadoss_db_net
