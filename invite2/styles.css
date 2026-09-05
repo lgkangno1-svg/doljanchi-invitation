@@ -23,3 +23,38 @@
 .share-opt-info{display:grid;gap:2px}
 .share-opt-info strong{font-size:14px;font-weight:600;color:#2d2824}
 .share-opt-info small{font-size:11px;color:#7d7168}
+
+/* Invitation section reference layout */
+.invitation-letter-v2{padding:52px 22px 56px;background:#fffdf8;overflow:hidden}
+.invitation-letter-v2 .invitation-eyebrow{margin-bottom:18px;color:#8e654f;font-size:11px;letter-spacing:.34em}
+.invitation-letter-v2 .invitation-monogram{width:74px;height:74px;margin-bottom:20px;border-color:rgba(92,67,53,.3)}
+.invitation-letter-v2 .invitation-monogram span{font-size:27px;color:#241d19}
+.invitation-letter-v2 .invitation-monogram small{margin-top:2px;color:#805b49;font-size:9px;letter-spacing:.08em}
+.invitation-letter-v2 .invitation-title{font-size:31px;line-height:1.48;letter-spacing:-.04em;color:#241c18}
+.invitation-letter-v2 .invitation-title em{color:#8d654f;font-size:34px;font-weight:400}
+.invitation-collage{display:grid;grid-template-columns:.86fr 1.2fr .86fr;gap:8px;align-items:end;margin:34px -4px 0}
+.collage-photo{margin:0;overflow:hidden;background:#eee3d7;border:1px solid rgba(139,106,85,.24);box-shadow:inset 0 0 0 2px rgba(255,255,255,.65)}
+.collage-photo img{display:block;width:100%;height:100%;object-fit:cover}
+.collage-photo-left,.collage-photo-right{height:225px;border-radius:999px 999px 28px 28px}
+.collage-photo-center{height:235px;border-radius:18px}
+.collage-photo-left img{object-position:center}
+.collage-photo-center img{object-position:center}
+.collage-photo-right img{object-position:center}
+.our-little-one{display:flex;align-items:center;justify-content:center;gap:12px;margin:10px auto 0;color:#9b7a64;font-family:"Cormorant Garamond",serif}
+.our-little-one i{font-size:22px;font-weight:500}
+.our-little-one span{font-size:18px;opacity:.72}
+.family-card-v2{max-width:none;margin:24px 0 0;padding:24px 0 0;border-top:1px solid rgba(78,59,48,.18);border-bottom:0}
+.family-card-v2 p{gap:8px}
+.family-card-v2 span{font-size:12px;color:#8d7264}
+.family-card-v2 strong{font-size:18px;color:#231b17;font-weight:500;letter-spacing:-.02em}
+@media(max-width:420px){
+  .invitation-letter-v2{padding-left:16px;padding-right:16px}
+  .invitation-letter-v2 .invitation-title{font-size:29px}
+  .invitation-letter-v2 .invitation-title em{font-size:32px}
+  .invitation-collage{gap:6px;margin-left:-2px;margin-right:-2px}
+  .collage-photo-left,.collage-photo-right{height:185px;border-radius:999px 999px 22px 22px}
+  .collage-photo-center{height:195px;border-radius:14px}
+  .our-little-one{gap:8px}
+  .our-little-one i{font-size:19px}
+  .family-card-v2 strong{font-size:17px}
+}
