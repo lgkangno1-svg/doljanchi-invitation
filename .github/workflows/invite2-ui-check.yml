@@ -20,16 +20,16 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/invite2-check
-          for path in '/' '/styles.css?v=6' '/app.js?v=6'; do
-            key="$(echo "$path" | tr '/?=&.' '_')"
-            curl -fsSL -D "/tmp/invite2-check/${key}.headers" -o "/tmp/invite2-check/${key}.body" "https://invite2.avocadoss.co.kr${path}"
-            echo "=== $path ==="
-            grep -Ei '^(HTTP/|content-type:|content-length:|cache-control:|etag:|cf-cache-status:|age:)' "/tmp/invite2-check/${key}.headers" | tr -d '\r' || true
-            echo "bytes=$(wc -c < /tmp/invite2-check/${key}.body)"
+          curl -fsSL -D /tmp/invite2-check/root.headers -o /tmp/invite2-check/root.html 'https://invite2.avocadoss.co.kr/?asset_check=1'
+          curl -fsSL -D /tmp/invite2-check/styles.headers -o /tmp/invite2-check/styles.css 'https://invite2.avocadoss.co.kr/styles.css?v=6'
+          curl -fsSL -D /tmp/invite2-check/app.headers -o /tmp/invite2-check/app.js 'https://invite2.avocadoss.co.kr/app.js?v=6'
+          for f in root styles app; do
+            echo "=== $f ==="
+            grep -Ei '^(HTTP/|content-type:|content-length:|cache-control:|etag:|cf-cache-status:|age:)' "/tmp/invite2-check/${f}.headers" | tr -d '\r' || true
           done
-          grep -q 'invitation-collage' /tmp/invite2-check/___.body
-          grep -q 'Invitation section reference layout' /tmp/invite2-check/_styles_css_v_6.body
-          grep -qi '^content-type: text/css' /tmp/invite2-check/_styles_css_v_6.headers
+          grep -q 'invitation-collage' /tmp/invite2-check/root.html
+          grep -q 'Invitation section reference layout' /tmp/invite2-check/styles.css
+          grep -qi '^content-type: text/css' /tmp/invite2-check/styles.headers
 
       - name: Capture mobile screenshot
         shell: bash
@@ -43,7 +43,7 @@ jobs:
           "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
             --window-size=390,844 --virtual-time-budget=8000 \
             --screenshot=/tmp/invite2-check/mobile.png \
-            'https://invite2.avocadoss.co.kr/?ui_check=1'
+            'https://invite2.avocadoss.co.kr/?ui_check=2'
           test -s /tmp/invite2-check/mobile.png
           ls -lh /tmp/invite2-check/mobile.png
 
