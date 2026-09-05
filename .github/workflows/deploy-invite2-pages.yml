@@ -67,6 +67,24 @@ jobs:
           echo "CF_PAGES_PROJECT=$project" >> "$GITHUB_ENV"
           echo "Resolved Pages project: $project"
 
+      - name: Build supplied collage photo assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p invite2/assets
+          for name in left center right; do
+            src="invite2/assets-src/collage-${name}.webp.b64"
+            out="invite2/assets/collage-${name}.webp"
+            test -s "$src"
+            base64 --decode "$src" > "$out"
+            size="$(wc -c < "$out")"
+            [[ "$size" -gt 20000 ]] || { echo "::error::$out decoded too small: $size bytes"; exit 9; }
+            magic="$(xxd -p -l 12 "$out")"
+            [[ "$magic" == 52494646*57454250 ]] || { echo "::error::$out is not a valid RIFF/WEBP file"; exit 10; }
+            echo "$out: $size bytes"
+          done
+          rm -rf invite2/assets-src
+
       - name: Validate invite2 source markers and asset paths
         shell: bash
         run: |
@@ -75,7 +93,13 @@ jobs:
           test -f invite2/styles.css
           test -f invite2/invite2-hotfix.css
           test -f invite2/app.js
+          test -s invite2/assets/collage-left.webp
+          test -s invite2/assets/collage-center.webp
+          test -s invite2/assets/collage-right.webp
           grep -F 'invitation-collage' invite2/index.html
+          grep -F 'src="/assets/collage-left.webp' invite2/index.html
+          grep -F 'src="/assets/collage-center.webp' invite2/index.html
+          grep -F 'src="/assets/collage-right.webp' invite2/index.html
           grep -F '아들</span><strong>강호성' invite2/index.html
           grep -F '며느리</span><strong>홍주은' invite2/index.html
           grep -F '손녀</span><strong>강채원' invite2/index.html
@@ -105,6 +129,9 @@ jobs:
           for attempt in 1 2 3 4 5 6; do
             body="$(curl -fsSL --max-time 20 "$base/?deploy_check=$GITHUB_SHA" || true)"
             if grep -q 'invitation-collage' <<<"$body" \
+              && grep -q 'src="/assets/collage-left.webp' <<<"$body" \
+              && grep -q 'src="/assets/collage-center.webp' <<<"$body" \
+              && grep -q 'src="/assets/collage-right.webp' <<<"$body" \
               && ! grep -q '저희에게 찾아온 가장 빛나는 선물' <<<"$body" \
               && grep -q 'href="/styles.css?v=' <<<"$body" \
               && grep -q 'href="/invite2-hotfix.css?v=' <<<"$body" \
@@ -113,7 +140,7 @@ jobs:
               break
             fi
             if [[ "$attempt" == 6 ]]; then
-              echo '::error::Production HTML did not update to the expected absolute-asset version.'
+              echo '::error::Production HTML did not update to the expected collage-photo version.'
               exit 4
             fi
             echo "Production not updated yet; retry $attempt/6"
@@ -126,4 +153,12 @@ jobs:
           [[ "$css_type" == *'text/css'* ]] || { echo "::error::styles.css MIME invalid: $css_type"; exit 6; }
           [[ "$hotfix_type" == *'text/css'* ]] || { echo "::error::invite2-hotfix.css MIME invalid: $hotfix_type"; exit 7; }
           [[ "$js_type" == *'javascript'* ]] || { echo "::error::app.js MIME invalid: $js_type"; exit 8; }
-          echo '✅ invite2 production HTML and asset MIME verification passed.'
+
+          for name in left center right; do
+            image_headers="$(curl -fsSI --max-time 20 "$base/assets/collage-${name}.webp?verify=$GITHUB_SHA" | tr -d '\r')"
+            image_type="$(awk 'BEGIN{IGNORECASE=1} /^content-type:/ {print tolower($0); exit}' <<<"$image_headers")"
+            image_len="$(awk 'BEGIN{IGNORECASE=1} /^content-length:/ {gsub(/[^0-9]/, "", $0); print $0; exit}' <<<"$image_headers")"
+            [[ "$image_type" == *'image/webp'* ]] || { echo "::error::collage-${name}.webp MIME invalid: $image_type"; exit 11; }
+            if [[ -n "$image_len" ]]; then [[ "$image_len" -gt 20000 ]] || { echo "::error::collage-${name}.webp too small in production: $image_len"; exit 12; }; fi
+          done
+          echo '✅ invite2 production HTML, CSS/JS, and supplied WebP collage assets verified.'
