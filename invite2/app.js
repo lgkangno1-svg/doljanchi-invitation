@@ -2,91 +2,63 @@ const toast = document.querySelector('#toast');
 let toastTimer;
 
 function showToast(message) {
+  if (!toast) return;
   toast.textContent = message;
   toast.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
 }
 
-// 초대 문구 본문 대신 가족 사진 콜라주를 배치합니다.
-(async () => {
-  const letter = document.querySelector('.invitation-letter');
-  if (!letter) return;
-
-  const bodyCopy = letter.querySelector('.body-copy');
-  if (bodyCopy) bodyCopy.remove();
-
-  const familyCard = letter.querySelector('.family-card');
-  if (!familyCard || letter.querySelector('.invitation-collage-wrap')) return;
-
-  const wrap = document.createElement('div');
-  wrap.className = 'invitation-collage-wrap';
-  const image = document.createElement('img');
-  image.className = 'invitation-collage';
-  image.alt = '채원이와 가족의 따뜻한 순간을 담은 사진';
-  image.decoding = 'async';
-  wrap.appendChild(image);
-  familyCard.before(wrap);
-
-  const style = document.createElement('style');
-  style.textContent = `
-    .invitation-letter .invitation-collage-wrap {
-      width: min(100%, 520px);
-      margin: 30px auto 36px;
-    }
-    .invitation-letter .invitation-collage {
-      display: block;
-      width: 100%;
-      height: auto;
-      border-radius: 14px;
-      box-shadow: 0 10px 28px rgba(79, 58, 43, .08);
-    }
-    @media (max-width: 420px) {
-      .invitation-letter .invitation-collage-wrap {
-        width: calc(100% + 12px);
-        margin-left: -6px;
-        margin-right: -6px;
-      }
-      .invitation-letter .invitation-collage {
-        border-radius: 10px;
-      }
-    }
-  `;
-  document.head.appendChild(style);
-
+async function copyText(text, successMessage) {
   try {
-    const response = await fetch('./assets/family-collage.b64.txt?v=20260905-family-collage-1', { cache: 'force-cache' });
-    if (!response.ok) throw new Error(`collage asset ${response.status}`);
-    const encoded = (await response.text()).trim();
-    image.src = `data:image/jpeg;base64,${encoded}`;
-  } catch (error) {
-    wrap.remove();
-    console.error('Failed to load invitation collage', error);
-  }
-})();
-
-// 계좌번호 복사
-document.querySelectorAll('.account-row').forEach(button => button.addEventListener('click', async () => {
-  try {
-    await navigator.clipboard.writeText(button.dataset.account);
-    showToast('계좌번호를 복사했습니다');
+    await navigator.clipboard.writeText(text);
+    showToast(successMessage);
+    return true;
   } catch {
-    showToast('계좌번호를 길게 눌러 복사해 주세요');
+    try {
+      const input = document.createElement('textarea');
+      input.value = text;
+      input.setAttribute('readonly', '');
+      input.style.position = 'fixed';
+      input.style.opacity = '0';
+      document.body.appendChild(input);
+      input.select();
+      const ok = document.execCommand('copy');
+      input.remove();
+      if (ok) {
+        showToast(successMessage);
+        return true;
+      }
+    } catch {}
+    showToast('복사할 수 없습니다. 길게 눌러 복사해 주세요.');
+    return false;
   }
-}));
+}
 
-// 음악 재생 & 유도 화살표 제어
+// Broken remote gallery images fall back to the known hero image without affecting layout.
+document.querySelectorAll('.collage-image[data-fallback]').forEach(image => {
+  image.addEventListener('error', () => {
+    const fallback = image.dataset.fallback;
+    if (fallback && image.src !== fallback) image.src = fallback;
+  }, { once: true });
+});
+
+// Account copy.
+document.querySelectorAll('.account-row').forEach(button => {
+  button.addEventListener('click', () => copyText(button.dataset.account || '', '계좌번호를 복사했습니다'));
+});
+
+// Music.
 const audio = document.querySelector('#bgm');
 const musicButton = document.querySelector('#music-button');
 const musicGuide = document.querySelector('#music-guide');
 
 function hideMusicGuide() {
-  if (musicGuide && !musicGuide.classList.contains('hidden')) {
-    musicGuide.classList.add('hidden');
-  }
+  if (musicGuide) musicGuide.classList.add('hidden');
 }
 
-musicButton.addEventListener('click', async () => {
+async function toggleMusic() {
+  if (!audio || !musicButton) return;
   hideMusicGuide();
   try {
     if (audio.paused) {
@@ -101,16 +73,12 @@ musicButton.addEventListener('click', async () => {
   } catch {
     showToast('음악을 재생할 수 없습니다');
   }
-});
-
-// 첫 상호작용 시 화살표 클릭도 음악 재생으로 연동
-if (musicGuide) {
-  musicGuide.addEventListener('click', () => {
-    musicButton.click();
-  });
 }
 
-// 공유 모달 제어
+if (musicButton) musicButton.addEventListener('click', toggleMusic);
+if (musicGuide) musicGuide.addEventListener('click', toggleMusic);
+
+// Share modal.
 const shareModal = document.querySelector('#share-modal');
 const shareButton = document.querySelector('#share-button');
 const shareClose = document.querySelector('#share-close');
@@ -119,73 +87,58 @@ const shareKakao = document.querySelector('#share-kakao');
 const shareSms = document.querySelector('#share-sms');
 const shareCopy = document.querySelector('#share-copy');
 
+const SHARE_TITLE = '강채원의 첫 번째 생일';
+const SHARE_DESC = '소중한 분들을 채원이의 첫돌에 초대합니다.';
+const SHARE_URL = 'https://invite2.avocadoss.co.kr/';
+
 function openShareModal() {
-  if (shareModal) shareModal.hidden = false;
+  if (!shareModal) return;
+  shareModal.hidden = false;
+  document.body.style.overflow = 'hidden';
+  shareClose?.focus();
 }
 
 function closeShareModal() {
-  if (shareModal) shareModal.hidden = true;
+  if (!shareModal) return;
+  shareModal.hidden = true;
+  document.body.style.overflow = '';
+  shareButton?.focus();
 }
 
 if (shareButton) shareButton.addEventListener('click', openShareModal);
 if (shareClose) shareClose.addEventListener('click', closeShareModal);
 if (shareBackdrop) shareBackdrop.addEventListener('click', closeShareModal);
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && shareModal && !shareModal.hidden) closeShareModal();
+});
 
-const SHARE_TITLE = '강채원의 첫 번째 생일';
-const SHARE_DESC = '소중한 분들을 채원이의 첫돌에 초대합니다.';
-
-// 카카오톡 공유
 if (shareKakao) {
   shareKakao.addEventListener('click', async () => {
     closeShareModal();
-    const shareUrl = location.href;
-    const shareData = {
-      title: SHARE_TITLE,
-      text: SHARE_DESC,
-      url: shareUrl
-    };
-
-    // 모바일 네이티브 공유 창 (카카오톡 최우선 선택 가능)
     if (navigator.share) {
       try {
-        await navigator.share(shareData);
+        await navigator.share({ title: SHARE_TITLE, text: SHARE_DESC, url: SHARE_URL });
         return;
-      } catch (err) {
-        if (err && err.name === 'AbortError') return;
+      } catch (error) {
+        if (error?.name === 'AbortError') return;
       }
     }
-
-    // fallback: 카카오톡 웹 공유 URL 또는 클립보드 복사
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      showToast('초대장 주소를 복사했습니다. 카카오톡에 붙여넣어 주세요.');
-    } catch {
-      showToast('초대장 주소를 복사해 주세요');
-    }
+    await copyText(SHARE_URL, '초대장 주소를 복사했습니다. 카카오톡에 붙여넣어 주세요.');
   });
 }
 
-// 문자메시지(SMS) 공유
 if (shareSms) {
   shareSms.addEventListener('click', () => {
     closeShareModal();
-    const shareUrl = location.href;
-    const smsBody = `[초대장] ${SHARE_TITLE}\n${SHARE_DESC}\n\n일시: 2026. 10. 18 낮 12시\n장소: 코트야드 메리어트 서울 명동 3층 한양 1+2홀\n초대장 바로가기: ${shareUrl}`;
+    const smsBody = `[초대장] ${SHARE_TITLE}\n${SHARE_DESC}\n\n일시: 2026. 10. 18 낮 12시\n장소: 코트야드 메리어트 서울 명동 3층 한양 1+2홀\n초대장 바로가기: ${SHARE_URL}`;
     const isIos = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const smsScheme = isIos ? 'sms:&body=' : 'sms:?body=';
-    location.href = smsScheme + encodeURIComponent(smsBody);
+    location.href = (isIos ? 'sms:&body=' : 'sms:?body=') + encodeURIComponent(smsBody);
   });
 }
 
-// 링크 복사
 if (shareCopy) {
   shareCopy.addEventListener('click', async () => {
     closeShareModal();
-    try {
-      await navigator.clipboard.writeText(location.href);
-      showToast('초대장 주소를 복사했습니다');
-    } catch {
-      showToast('초대장 주소를 길게 눌러 복사해 주세요');
-    }
+    await copyText(SHARE_URL, '초대장 주소를 복사했습니다');
   });
 }
