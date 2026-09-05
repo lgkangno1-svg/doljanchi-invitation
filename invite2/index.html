@@ -11,17 +11,19 @@
   <meta property="og:url" content="https://invite2.avocadoss.co.kr/" />
   <meta property="og:image" content="https://invite.avocadoss.co.kr/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png" />
   <meta name="twitter:card" content="summary_large_image" />
+  <link rel="canonical" href="https://invite2.avocadoss.co.kr/" />
   <title>강채원의 첫 번째 생일</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Noto+Serif+KR:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=6" />
+  <link rel="stylesheet" href="/styles.css?v=20260905-2" />
+  <link rel="stylesheet" href="/invite2-hotfix.css?v=20260905-2" />
 </head>
 <body>
   <main class="invitation-shell">
     <section class="hero" aria-label="강채원 첫돌 초대장">
       <img class="hero-image" src="https://invite.avocadoss.co.kr/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png" alt="채원이의 첫 번째 생일을 위한 호텔 스타일 케이크 테이블" />
-      <div class="hero-shade"></div>
+      <div class="hero-shade" aria-hidden="true"></div>
       <div class="hero-inner">
         <p class="eyebrow light">OUR GRANDDAUGHTER'S FIRST BIRTHDAY</p>
         <h1>강채원</h1>
@@ -39,13 +41,13 @@
 
       <div class="invitation-collage" aria-label="채원이 가족 사진">
         <figure class="collage-photo collage-photo-left">
-          <img src="https://invite.avocadoss.co.kr/manus-storage/chaewon-gallery-hands.jpg" alt="채원이 가족 사진" loading="lazy" />
+          <img class="collage-image" src="https://invite.avocadoss.co.kr/manus-storage/chaewon-gallery-hands.jpg" data-fallback="https://invite.avocadoss.co.kr/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png" alt="채원이 가족 사진" loading="lazy" />
         </figure>
         <figure class="collage-photo collage-photo-center">
-          <img src="https://invite.avocadoss.co.kr/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png" alt="채원이의 첫돌 사진" loading="lazy" />
+          <img class="collage-image" src="https://invite.avocadoss.co.kr/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png" alt="채원이의 첫돌 사진" loading="lazy" />
         </figure>
         <figure class="collage-photo collage-photo-right">
-          <img src="https://invite.avocadoss.co.kr/manus-storage/chaewon-gallery-feet.jpg" alt="채원이 사진" loading="lazy" />
+          <img class="collage-image" src="https://invite.avocadoss.co.kr/manus-storage/chaewon-gallery-feet.jpg" data-fallback="https://invite.avocadoss.co.kr/manus-storage/invitations/1/1787323479492-chaewon-hotel-hero_a7c0aa2c.png" alt="채원이 사진" loading="lazy" />
         </figure>
       </div>
 
@@ -132,24 +134,15 @@
       <div class="share-options">
         <button type="button" id="share-kakao" class="share-opt-btn kakao">
           <span class="share-opt-badge kakao-badge">카톡</span>
-          <div class="share-opt-info">
-            <strong>카카오톡으로 공유</strong>
-            <small>카카오톡 메신저로 초대장 전송</small>
-          </div>
+          <div class="share-opt-info"><strong>카카오톡으로 공유</strong><small>카카오톡 메신저로 초대장 전송</small></div>
         </button>
         <button type="button" id="share-sms" class="share-opt-btn sms">
           <span class="share-opt-badge sms-badge">문자</span>
-          <div class="share-opt-info">
-            <strong>문자메시지(SMS)로 공유</strong>
-            <small>문자 앱으로 초대 문구 및 링크 전송</small>
-          </div>
+          <div class="share-opt-info"><strong>문자메시지(SMS)로 공유</strong><small>문자 앱으로 초대 문구 및 링크 전송</small></div>
         </button>
         <button type="button" id="share-copy" class="share-opt-btn copy">
           <span class="share-opt-badge copy-badge">링크</span>
-          <div class="share-opt-info">
-            <strong>초대장 링크 복사</strong>
-            <small>주소를 복사하여 원하는 곳에 붙여넣기</small>
-          </div>
+          <div class="share-opt-info"><strong>초대장 링크 복사</strong><small>주소를 복사하여 원하는 곳에 붙여넣기</small></div>
         </button>
       </div>
     </div>
@@ -159,6 +152,6 @@
     <source src="https://invite.avocadoss.co.kr/manus-storage/chaewon-first-birthday-bgm_af29a8dc.mp3" type="audio/mpeg" />
   </audio>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="./app.js?v=6" defer></script>
+  <script src="/app.js?v=20260905-2" defer></script>
 </body>
 </html>
