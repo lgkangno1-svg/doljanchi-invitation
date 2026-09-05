@@ -9,9 +9,11 @@ services:
       - .env
     environment:
       TELEGRAM_BOT_TOKEN_FILE: /run/secrets/telegram_bot_token
+      TELEGRAM_CHAT_ID_FILE: /run/secrets/telegram_chat_id
     volumes:
       - media_data:/app/media
-      - ${TELEGRAM_BOT_TOKEN_FILE_HOST:-/dev/null}:/run/secrets/telegram_bot_token:ro
+      - ${TELEGRAM_BOT_TOKEN_FILE_HOST:-/home/tnfwod/projects/cali-stackcheck/secrets/telegram_bot_token}:/run/secrets/telegram_bot_token:ro
+      - ${TELEGRAM_CHAT_ID_FILE_HOST:-/home/tnfwod/projects/cali-stackcheck/secrets/invite_telegram_chat_id}:/run/secrets/telegram_chat_id:ro
     networks:
       - default
       - avocadoss_db_net
