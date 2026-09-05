@@ -129,15 +129,18 @@ jobs:
 
             const music = page.locator('#music-button');
             await music.click();
-            await page.waitForTimeout(500);
+            try {
+              await page.waitForFunction(() => document.querySelector('#music-button')?.textContent?.trim() === '정지', null, { timeout: 8000 });
+            } catch {}
             const musicText = await music.innerText();
-            if (musicText === '정지') {
-              pass(`${name}:music-toggle`, 'playing state reached');
+            const audioState = await page.locator('#bgm').evaluate(audio => ({ paused: audio.paused, readyState: audio.readyState, networkState: audio.networkState, error: audio.error ? { code: audio.error.code, message: audio.error.message } : null }));
+            if (musicText === '정지' && audioState.paused === false) {
+              pass(`${name}:music-toggle`, JSON.stringify(audioState));
               await music.click();
-              await page.waitForTimeout(150);
+              await page.waitForTimeout(200);
               if ((await music.innerText()) === '음악') pass(`${name}:music-stop`); else fail(`${name}:music-stop`, await music.innerText());
             } else {
-              fail(`${name}:music-toggle`, `button=${musicText}`);
+              fail(`${name}:music-toggle`, JSON.stringify({ button: musicText, audioState }));
             }
 
             const cssLoaded = await page.evaluate(() => [...document.styleSheets].some(s => s.href && s.href.includes('/styles.css')) && [...document.styleSheets].some(s => s.href && s.href.includes('/invite2-hotfix.css')));
