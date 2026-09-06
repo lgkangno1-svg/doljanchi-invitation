@@ -81,7 +81,7 @@ const shareCopy = document.querySelector('#share-copy');
 
 const SHARE_TITLE = '저희들의 사랑의 결실에 초대합니다.';
 const SHARE_DESC = '';
-const SHARE_URL = 'https://invite2.avocadoss.co.kr/';
+const SHARE_URL = 'https://invite2.avocadoss.co.kr/?kakao=202609061520';
 
 function openShareModal() {
   if (!shareModal) return;
