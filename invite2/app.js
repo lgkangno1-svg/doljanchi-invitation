@@ -35,14 +35,6 @@ async function copyText(text, successMessage) {
   }
 }
 
-// Broken remote gallery images fall back to the known hero image without affecting layout.
-document.querySelectorAll('.collage-image[data-fallback]').forEach(image => {
-  image.addEventListener('error', () => {
-    const fallback = image.dataset.fallback;
-    if (fallback && image.src !== fallback) image.src = fallback;
-  }, { once: true });
-});
-
 // Account copy.
 document.querySelectorAll('.account-row').forEach(button => {
   button.addEventListener('click', () => copyText(button.dataset.account || '', '계좌번호를 복사했습니다'));
@@ -87,8 +79,8 @@ const shareKakao = document.querySelector('#share-kakao');
 const shareSms = document.querySelector('#share-sms');
 const shareCopy = document.querySelector('#share-copy');
 
-const SHARE_TITLE = '강채원의 첫 번째 생일';
-const SHARE_DESC = '소중한 분들을 채원이의 첫돌에 초대합니다.';
+const SHARE_TITLE = '저희들의 사랑의 결실에 초대합니다.';
+const SHARE_DESC = '';
 const SHARE_URL = 'https://invite2.avocadoss.co.kr/';
 
 function openShareModal() {
@@ -117,7 +109,7 @@ if (shareKakao) {
     closeShareModal();
     if (navigator.share) {
       try {
-        await navigator.share({ title: SHARE_TITLE, text: SHARE_DESC, url: SHARE_URL });
+        await navigator.share({ title: SHARE_TITLE, url: SHARE_URL });
         return;
       } catch (error) {
         if (error?.name === 'AbortError') return;
@@ -130,7 +122,7 @@ if (shareKakao) {
 if (shareSms) {
   shareSms.addEventListener('click', () => {
     closeShareModal();
-    const smsBody = `[초대장] ${SHARE_TITLE}\n${SHARE_DESC}\n\n일시: 2026. 10. 18 낮 12시\n장소: 코트야드 메리어트 서울 명동 3층 한양 1+2홀\n초대장 바로가기: ${SHARE_URL}`;
+    const smsBody = `[초대장] ${SHARE_TITLE}\n\n일시: 2026. 10. 18 낮 12시\n장소: 코트야드 메리어트 서울 명동 3층 한양 1+2홀\n초대장 바로가기: ${SHARE_URL}`;
     const isIos = /iPhone|iPad|iPod/i.test(navigator.userAgent);
     location.href = (isIos ? 'sms:&body=' : 'sms:?body=') + encodeURIComponent(smsBody);
   });
