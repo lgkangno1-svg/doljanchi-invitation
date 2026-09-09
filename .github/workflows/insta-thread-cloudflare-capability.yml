@@ -1,0 +1,49 @@
+name: Probe Cloudflare tunnel capability for insta-thread
+
+on:
+  push:
+    branches: [ops/insta-thread-cloudflare-probe-20260909]
+    paths: ['.github/workflows/insta-thread-cloudflare-capability.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      TOKEN_PRIMARY: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      TOKEN_ALT: ${{ secrets.CF_API_TOKEN }}
+      ACCOUNT_PRIMARY: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      ACCOUNT_ALT: ${{ secrets.CF_ACCOUNT_ID }}
+    steps:
+      - name: Probe token capabilities by HTTP status only
+        shell: bash
+        run: |
+          set -euo pipefail
+          account="${ACCOUNT_PRIMARY:-${ACCOUNT_ALT:-}}"
+          [[ -n "$account" ]] || { echo 'No Cloudflare account ID secret is present.'; exit 1; }
+          probe() {
+            local label="$1" token="$2"
+            if [[ -z "$token" ]]; then echo "$label=absent"; return 0; fi
+            echo "$label=present"
+            verify="$(curl -sS -o "$RUNNER_TEMP/${label}-verify.json" -w '%{http_code}' --max-time 20 \
+              -H "Authorization: Bearer $token" https://api.cloudflare.com/client/v4/user/tokens/verify || true)"
+            tunnels="$(curl -sS -o "$RUNNER_TEMP/${label}-tunnels.json" -w '%{http_code}' --max-time 20 \
+              -H "Authorization: Bearer $token" "https://api.cloudflare.com/client/v4/accounts/$account/cfd_tunnel?per_page=1&is_deleted=false" || true)"
+            echo "$label.verify_http=$verify"
+            echo "$label.tunnel_list_http=$tunnels"
+            if [[ "$tunnels" != 200 ]]; then
+              python3 - "$RUNNER_TEMP/${label}-tunnels.json" <<'PY'
+          import json,sys
+          try:
+              d=json.load(open(sys.argv[1]))
+              print('error_codes=' + ','.join(str(e.get('code')) for e in d.get('errors',[]) if isinstance(e,dict)))
+          except Exception:
+              print('error_codes=unavailable')
+          PY
+            fi
+          }
+          probe primary "$TOKEN_PRIMARY"
+          probe alt "$TOKEN_ALT"
