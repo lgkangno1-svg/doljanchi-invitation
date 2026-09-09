@@ -1,0 +1,71 @@
+name: Provision dedicated insta-thread Cloudflare tunnel
+
+on:
+  push:
+    branches: [ops/insta-thread-cloudflare-probe-20260909]
+    paths:
+      - '.github/workflows/insta-thread-cloudflare-provision.yml'
+      - 'ops/insta-thread-recipient.crt'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: insta-thread-cloudflare-provision
+  cancel-in-progress: true
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_ORIGIN_SERVICE: http://127.0.0.1:8788
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ops/insta-thread-cloudflare-probe-20260909
+
+      - name: Preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "${CLOUDFLARE_API_TOKEN:-}" ]] || { echo 'Cloudflare API token missing'; exit 1; }
+          [[ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ]] || { echo 'Cloudflare account ID missing'; exit 1; }
+          openssl x509 -in ops/insta-thread-recipient.crt -noout -subject -dates
+          echo 'Cloudflare credentials present; values remain hidden.'
+
+      - name: Clone tested production and provision Cloudflare
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          echo "TMP_APP=$tmp/app" >> "$GITHUB_ENV"
+          git clone --quiet --branch production --single-branch https://github.com/lgkangno1-svg/insta-thread.git "$tmp/app"
+          main_sha="$(git ls-remote https://github.com/lgkangno1-svg/insta-thread.git refs/heads/main | awk '{print $1}')"
+          prod_sha="$(git -C "$tmp/app" rev-parse HEAD)"
+          [[ -n "$main_sha" && "$main_sha" == "$prod_sha" ]] || { echo 'Latest main is not yet the tested production SHA.'; exit 1; }
+          echo "Using tested production ${prod_sha:0:12}"
+          cd "$tmp/app"
+          cp .env.example .env
+          chmod 600 .env
+          python3 scripts/provision-cloudflare.py
+          echo "PRODUCTION_SHA=$prod_sha" >> "$GITHUB_ENV"
+
+      - name: Encrypt Tunnel connector token for miniPC-only private key
+        shell: bash
+        run: |
+          set -euo pipefail
+          token="$(sed -n 's/^CLOUDFLARE_TUNNEL_TOKEN=//p' "$TMP_APP/.env" | tail -n 1)"
+          [[ -n "$token" && "$token" != *replace-with-cloudflare* ]] || { echo 'Dedicated Tunnel token missing'; exit 1; }
+          cipher="$RUNNER_TEMP/insta-thread-tunnel-token.cms"
+          printf '%s' "$token" | openssl cms -encrypt -binary -aes256 -outform DER \
+            -out "$cipher" "$GITHUB_WORKSPACE/ops/insta-thread-recipient.crt"
+          unset token
+          echo 'ENCRYPTED_TUNNEL_TOKEN_BEGIN'
+          base64 -w0 "$cipher"
+          echo
+          echo 'ENCRYPTED_TUNNEL_TOKEN_END'
+          echo "production_sha=$PRODUCTION_SHA"
+          echo 'Only ciphertext was emitted. The Cloudflare API token and Tunnel token remain undisclosed.'
