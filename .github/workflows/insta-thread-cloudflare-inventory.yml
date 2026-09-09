@@ -1,0 +1,72 @@
+name: Inventory existing Cloudflare tunnel routes
+
+on:
+  push:
+    branches: [ops/insta-thread-cloudflare-probe-20260909]
+    paths: ['.github/workflows/insta-thread-cloudflare-inventory.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Read-only tunnel and DNS inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "${CF_TOKEN:-}" && -n "${CF_ACCOUNT:-}" ]]
+          hdr=(-H "Authorization: Bearer $CF_TOKEN")
+          curl -fsS --max-time 30 "${hdr[@]}" "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/cfd_tunnel?per_page=100&is_deleted=false" > "$RUNNER_TEMP/tunnels.json"
+          python3 - "$RUNNER_TEMP/tunnels.json" "$RUNNER_TEMP/tunnel-ids.txt" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1]))
+          items=d.get('result') or []
+          with open(sys.argv[2],'w') as f:
+              for t in items:
+                  tid=t.get('id',''); name=t.get('name',''); status=t.get('status','')
+                  print(f'TUNNEL name={name!r} id={tid} status={status}')
+                  if tid: f.write(tid+'\n')
+          PY
+          echo '--- ingress configurations ---'
+          while IFS= read -r tid; do
+            code="$(curl -sS -o "$RUNNER_TEMP/cfg.json" -w '%{http_code}' --max-time 20 "${hdr[@]}" "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/cfd_tunnel/$tid/configurations" || true)"
+            echo "CONFIG tunnel=$tid http=$code"
+            if [[ "$code" == 200 ]]; then
+              python3 - "$RUNNER_TEMP/cfg.json" <<'PY'
+          import json,sys,re
+          d=json.load(open(sys.argv[1])); r=d.get('result') or {}; c=r.get('config') or {}
+          for x in c.get('ingress') or []:
+              if not isinstance(x,dict): continue
+              host=x.get('hostname','<catchall>'); svc=str(x.get('service',''))
+              svc=re.sub(r'([?&](?:token|key|secret)=)[^& ]+',r'\1[REDACTED]',svc,flags=re.I)
+              print(f'  ingress host={host!r} service={svc!r}')
+          PY
+            fi
+          done < "$RUNNER_TEMP/tunnel-ids.txt"
+
+          echo '--- tunnel-backed DNS names in avocadoss.co.kr ---'
+          zone_code="$(curl -sS -o "$RUNNER_TEMP/zones.json" -w '%{http_code}' --max-time 20 "${hdr[@]}" 'https://api.cloudflare.com/client/v4/zones?name=avocadoss.co.kr&per_page=10' || true)"
+          echo "zone_lookup_http=$zone_code"
+          if [[ "$zone_code" == 200 ]]; then
+            zone="$(python3 -c "import json;d=json.load(open('$RUNNER_TEMP/zones.json'));print((d.get('result')or[{}])[0].get('id',''))")"
+            if [[ -n "$zone" ]]; then
+              dns_code="$(curl -sS -o "$RUNNER_TEMP/dns.json" -w '%{http_code}' --max-time 20 "${hdr[@]}" "https://api.cloudflare.com/client/v4/zones/$zone/dns_records?per_page=500" || true)"
+              echo "dns_list_http=$dns_code"
+              if [[ "$dns_code" == 200 ]]; then
+                python3 - "$RUNNER_TEMP/dns.json" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1]))
+          for r in d.get('result') or []:
+              content=str(r.get('content',''))
+              if 'cfargotunnel.com' in content:
+                  print(f"DNS name={r.get('name')} type={r.get('type')} target={content} proxied={r.get('proxied')}")
+          PY
+              fi
+            fi
+          fi
