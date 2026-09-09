@@ -1,3 +1,4 @@
+# retry-pages-api-without-pagination
 name: Cleanup abandoned insta Pages custom domain
 
 on:
@@ -26,14 +27,16 @@ jobs:
           set -euo pipefail
           token="${CF_TOKEN_PRIMARY:-${CF_TOKEN_ALT:-}}"
           account="${CF_ACCOUNT_PRIMARY:-${CF_ACCOUNT_ALT:-}}"
+          account="$(printf '%s' "$account" | tr -d '[:space:]')"
           [[ -n "$token" && -n "$account" ]] || { echo 'pages_credentials_unavailable'; exit 0; }
           api='https://api.cloudflare.com/client/v4'
           host='insta.avocadoss.co.kr'
           auth=(-H "Authorization: Bearer $token" -H 'Content-Type: application/json')
 
-          code=$(curl -sS -o /tmp/projects.json -w '%{http_code}' --max-time 20 "${auth[@]}" "$api/accounts/$account/pages/projects?per_page=100" || true)
+          code=$(curl -sS -o /tmp/projects.json -w '%{http_code}' --max-time 20 "${auth[@]}" "$api/accounts/$account/pages/projects" || true)
           echo "pages_projects_http=$code"
           if [[ "$code" != 200 ]]; then
+            python3 -c "import json; p=json.load(open('/tmp/projects.json')); print('pages_errors='+';'.join(str(e.get('code'))+':'+str(e.get('message')) for e in (p.get('errors') or []) if isinstance(e,dict))[:500])" 2>/dev/null || true
             echo 'pages_cleanup_not_authorized_or_unavailable'
             exit 0
           fi
@@ -56,7 +59,7 @@ jobs:
                 removed=$((removed+1))
               else
                 echo '::error::Found stale Pages domain but could not delete it.'
-                cat /tmp/delete.json | head -c 600
+                python3 -c "import json; p=json.load(open('/tmp/delete.json')); print(';'.join(str(e.get('code'))+':'+str(e.get('message')) for e in (p.get('errors') or []) if isinstance(e,dict))[:500])" 2>/dev/null || true
                 exit 1
               fi
             fi
@@ -64,7 +67,6 @@ jobs:
           echo "pages_domain_matches=$found"
           echo "pages_domain_removed=$removed"
 
-          # Re-scan and fail if exact custom domain remains anywhere.
           remains=0
           while IFS= read -r project; do
             [[ -n "$project" ]] || continue
