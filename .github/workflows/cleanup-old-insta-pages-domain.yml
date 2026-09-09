@@ -1,0 +1,78 @@
+name: Cleanup abandoned insta Pages custom domain
+
+on:
+  push:
+    branches:
+      - ops/insta-thread-cloudflare-probe-20260909
+    paths:
+      - '.github/workflows/cleanup-old-insta-pages-domain.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CF_TOKEN_PRIMARY: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CF_TOKEN_ALT: ${{ secrets.CF_API_TOKEN }}
+      CF_ACCOUNT_PRIMARY: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CF_ACCOUNT_ALT: ${{ secrets.CF_ACCOUNT_ID }}
+    steps:
+      - name: Remove insta.avocadoss.co.kr from any Cloudflare Pages project
+        shell: bash
+        run: |
+          set -euo pipefail
+          token="${CF_TOKEN_PRIMARY:-${CF_TOKEN_ALT:-}}"
+          account="${CF_ACCOUNT_PRIMARY:-${CF_ACCOUNT_ALT:-}}"
+          [[ -n "$token" && -n "$account" ]] || { echo 'pages_credentials_unavailable'; exit 0; }
+          api='https://api.cloudflare.com/client/v4'
+          host='insta.avocadoss.co.kr'
+          auth=(-H "Authorization: Bearer $token" -H 'Content-Type: application/json')
+
+          code=$(curl -sS -o /tmp/projects.json -w '%{http_code}' --max-time 20 "${auth[@]}" "$api/accounts/$account/pages/projects?per_page=100" || true)
+          echo "pages_projects_http=$code"
+          if [[ "$code" != 200 ]]; then
+            echo 'pages_cleanup_not_authorized_or_unavailable'
+            exit 0
+          fi
+
+          python3 -c "import json; [print(x.get('name','')) for x in (json.load(open('/tmp/projects.json')).get('result') or []) if x.get('name')]" > /tmp/projects.txt
+          found=0
+          removed=0
+          while IFS= read -r project; do
+            [[ -n "$project" ]] || continue
+            enc=$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=""))' "$project")
+            dcode=$(curl -sS -o /tmp/domains.json -w '%{http_code}' --max-time 20 "${auth[@]}" "$api/accounts/$account/pages/projects/$enc/domains" || true)
+            [[ "$dcode" == 200 ]] || continue
+            match=$(python3 -c "import json; h='$host'; r=json.load(open('/tmp/domains.json')).get('result') or []; print('yes' if any((x.get('name') if isinstance(x,dict) else x)==h for x in r) else 'no')")
+            if [[ "$match" == yes ]]; then
+              found=$((found+1))
+              echo "old_pages_domain_found_project=$project"
+              del=$(curl -sS -o /tmp/delete.json -w '%{http_code}' --max-time 20 -X DELETE "${auth[@]}" "$api/accounts/$account/pages/projects/$enc/domains/$host" || true)
+              echo "pages_domain_delete_http=$del"
+              if [[ "$del" == 200 || "$del" == 204 ]]; then
+                removed=$((removed+1))
+              else
+                echo '::error::Found stale Pages domain but could not delete it.'
+                cat /tmp/delete.json | head -c 600
+                exit 1
+              fi
+            fi
+          done < /tmp/projects.txt
+          echo "pages_domain_matches=$found"
+          echo "pages_domain_removed=$removed"
+
+          # Re-scan and fail if exact custom domain remains anywhere.
+          remains=0
+          while IFS= read -r project; do
+            [[ -n "$project" ]] || continue
+            enc=$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=""))' "$project")
+            dcode=$(curl -sS -o /tmp/domains.json -w '%{http_code}' --max-time 20 "${auth[@]}" "$api/accounts/$account/pages/projects/$enc/domains" || true)
+            [[ "$dcode" == 200 ]] || continue
+            match=$(python3 -c "import json; h='$host'; r=json.load(open('/tmp/domains.json')).get('result') or []; print(sum(1 for x in r if (x.get('name') if isinstance(x,dict) else x)==h))")
+            remains=$((remains+match))
+          done < /tmp/projects.txt
+          echo "pages_domain_remaining=$remains"
+          [[ "$remains" == 0 ]]
