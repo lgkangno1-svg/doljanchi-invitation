@@ -1,0 +1,50 @@
+name: Probe direct miniPC SSH for insta-thread
+
+on:
+  push:
+    branches: [ops/insta-thread-cloudflare-probe-20260909]
+    paths: ['.github/workflows/insta-thread-minipc-ssh-probe.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      MINIPC_HOST: ${{ secrets.MINIPC_HOST }}
+      MINIPC_USER: ${{ secrets.MINIPC_USER }}
+      MINIPC_SSH_KEY: ${{ secrets.MINIPC_SSH_KEY }}
+      MINIPC_PORT: ${{ secrets.MINIPC_PORT }}
+    steps:
+      - name: Presence and read-only SSH probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "${MINIPC_HOST:-}" ]] || { echo 'MINIPC_HOST=absent'; exit 1; }
+          [[ -n "${MINIPC_USER:-}" ]] || { echo 'MINIPC_USER=absent'; exit 1; }
+          [[ -n "${MINIPC_SSH_KEY:-}" ]] || { echo 'MINIPC_SSH_KEY=absent'; exit 1; }
+          port="${MINIPC_PORT:-22}"
+          echo 'MINIPC_HOST=present'
+          echo 'MINIPC_USER=present'
+          echo 'MINIPC_SSH_KEY=present'
+          echo "MINIPC_PORT_configured=$([[ -n "${MINIPC_PORT:-}" ]] && echo yes || echo default22)"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$MINIPC_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh -p "$port" -i ~/.ssh/id_ed25519 \
+            -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 \
+            "$MINIPC_USER@$MINIPC_HOST" 'bash -s' <<'REMOTE'
+          set -u
+          echo "ssh_ok=yes host=$(hostname) user=$(id -un) uid=$(id -u)"
+          echo "free_gb=$(df -Pk "$HOME" | awk 'NR==2{printf "%.1f", $4/1024/1024}')"
+          command -v docker >/dev/null 2>&1 && { echo 'docker=present'; docker ps >/dev/null 2>&1 && echo 'docker_access=yes' || echo 'docker_access=no'; } || echo 'docker=absent'
+          command -v cloudflared >/dev/null 2>&1 && echo 'cloudflared=present' || echo 'cloudflared=absent'
+          command -v ffmpeg >/dev/null 2>&1 && echo 'ffmpeg=present' || echo 'ffmpeg=absent'
+          echo 'candidate_ports:'
+          for p in 8080 8180 8280 8380 8788; do
+            if ss -H -ltn "sport = :$p" 2>/dev/null | grep -q .; then echo "$p=busy"; else echo "$p=free"; fi
+          done
+          REMOTE
